@@ -1,0 +1,48 @@
+{
+  "projectId": "live-platform-smoke",
+  "subject": "numerology",
+  "videos": [
+    {
+      "id": "7695818823546588438",
+      "url": "https://www.tiktok.com/@stevenaitchisonbooks/video/7695818823546588438",
+      "platform": "tiktok",
+      "title": "What\u2019s your life path number? \ud83d\udd2e\u2728 In numerology, your birth date is believed to hold clues about your personality, strengths and the path you\u2019re drawn to. What\u2019s your number, and does its meaning sound like you? Tell me in the comments \ud83d\udc47 #Numerology #LifePathNumber #WitchTok #Spirituality #KnowYourself",
+      "creator": "stevenaitchisonbooks",
+      "publishedAt": "2026-10-12T16:27:39Z",
+      "duration": 62,
+      "followers": 33800,
+      "snapshots": [
+        {
+          "observedAt": "2026-10-20T08:06:35.975782Z",
+          "views": 5793,
+          "likes": 204,
+          "comments": 105,
+          "shares": 26,
+          "source": "TikTok public page hydration"
+        }
+      ],
+      "source": "TikTok public page hydration",
+      "fetchedAt": "2026-10-20T08:06:35.975782Z",
+      "description": "What\u2019s your life path number? \ud83d\udd2e\u2728 In numerology, your birth date is believed to hold clues about your personality, strengths and the path you\u2019re drawn to. What\u2019s your number, and does its meaning sound like you? Tell me in the comments \ud83d\udc47 #Numerology #LifePathNumber #WitchTok #Spirituality #KnowYourself",
+      "hashtags": [
+        "numerology",
+        "lifepathnumber",
+        "witchtok",
+        "spirituality",
+        "knowyourself"
+      ]
+    }
+  ],
+  "report": "",
+  "sources": [],
+  "warnings": [
+    "Sources with observed dates outside the requested window were excluded.",
+    "TikTok-Api could not complete enrichment (dependency, profile lock, login, challenge or denied response). Existing evidence was kept. Resolve access manually; no bypass or retry was attempted."
+  ],
+  "coverage": "Bounded public browser search sample. Exact counters only when public page hydration exposed them; no exhaustive viral ranking or actual retention is claimed.",
+  "generatedAt": "2026-10-20T08:06:47.031299Z",
+  "liveCollection": true,
+  "blocked": false,
+  "speechVideos": 0,
+  "visualVideos": 0
+}

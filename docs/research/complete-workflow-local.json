@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-10-20T08:17:51.087538Z",
+  "scope": "Isolated local software workflow; genuine recorded speech, fictional labeled knowledge, no viral-performance verification",
+  "status": "passed",
+  "elapsedSeconds": 56.17,
+  "stages": {
+    "workerPairing": "passed",
+    "knowledgeUpload": {
+      "characters": 770,
+      "exactTextPreserved": true
+    },
+    "actualAiResearch": {
+      "model": "deepseek/deepseek-v4.1-flash",
+      "patterns": 0,
+      "sourceIdsVerified": true,
+      "recordedFixtureEvidenceLevel": "transcript",
+      "actualPublicProviderReferences": 0
+    },
+    "actualAiScriptsAndExport": {
+      "model": "deepseek/deepseek-v4.1-flash",
+      "scripts": 1,
+      "citationsVerified": 7,
+      "markdownExport": true
+    },
+    "actualWorkerUploadAsrVision": {
+      "segments": 1,
+      "visualNotes": true,
+      "storedFrameBytes": false,
+      "snapshots": 0,
+      "originalPreserved": true
+    },
+    "actualAiDraftCoaching": {
+      "model": "deepseek/deepseek-v4.1-flash",
+      "fixes": 6,
+      "referenceIdsVerified": true
+    },
+    "utahPostingPlan": {
+      "timezone": "America/Denver",
+      "timingBasis": "experiment",
+      "futureWindows": 7,
+      "measuredDurationSample": 0
+    },
+    "emptyOutcomeRejected": "passed",
+    "outcomeFormAndMissingMetrics": {
+      "recordType": "explicit validation-only input fixture in temporary browser; not a real published outcome",
+      "views": 0,
+      "otherCounters": null
+    },
+    "backupRestoreAndReload": {
+      "allEightCollectionsPreserved": true,
+      "separateProjectId": true,
+      "workerTokenExcluded": true,
+      "frameBytesExcluded": true
+    }
+  },
+  "browserRuntimeErrors": 0
+}

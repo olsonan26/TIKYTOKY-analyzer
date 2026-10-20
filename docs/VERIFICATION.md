@@ -60,3 +60,15 @@ The smoke_* worker scripts and npm run smoke:ai are opt-in live checks. Some con
 ## Additional live reliability check
 
 A later real script request exposed hidden DeepSeek reasoning consuming the completion budget before JSON finished. OpenRouter’s current model catalog confirms this model accepts reasoning effort `none`; the dashboard now uses it for DeepSeek V4.1 calls, retaining strict response validation and the separate claim-verification pass. Real requests subsequently completed knowledge-cited scripts, Markdown export, local upload ASR/vision, draft coaching, and Utah planning. The claim verifier also correctly rejected an unsupported generated variant without saving it. See the final complete-workflow record for the final production pass status.
+
+
+The complete local UI workflow passed on October 20: actual worker pairing, knowledge upload with exact text preservation, real AI analysis, one generated script with seven exact knowledge citations and Markdown export, uploaded-file ASR/vision, six source-linked coaching fixes, seven Utah posting windows, rejection of an empty observation, explicit temporary form-fixture persistence, project export/restore and reload. All eight saved collections survived restore; worker tokens and raw frames were excluded. No browser runtime errors occurred. The recorded speech and fictional knowledge were clearly labeled software-validation input in an isolated temporary browser, not fabricated market or user content. [Sanitized complete-workflow result](research/complete-workflow-local.json).
+
+[Queued numerology evidence](research/queued-discovery-smoke.json) records the successful authenticated worker job and actual source counters. Signed playback assets and private browser/session data are omitted.
+
+
+## Complete production workflow passed
+
+The exact same full UI workflow passed against **https://tikytoky-analyzer.vercel.app** after password sign-in, including its actual cloud API routes and the paired local worker. It completed in 49.67 seconds with zero browser runtime errors: real AI analysis, one script with six verified exact knowledge quotations and Markdown export, local uploaded-video ASR/vision, six source-linked coaching fixes, seven Utah windows, empty-observation rejection, temporary form-fixture storage, complete export/restore, and reload persistence. [Sanitized production result](research/complete-workflow-production.json). The test explicitly granted the browser's documented local-network permission for this origin only; it did not disable browser security.
+
+Application commit `f829d26331bb681b3abae0c86eef2e17999e548b` also passed both Linux GitHub jobs ([run](https://github.com/olsonan26/TIKYTOKY-analyzer/actions/runs/39392470190)) and its GitHub-triggered Vercel remote Linux production build. Later changes record these outcomes in documentation only.
