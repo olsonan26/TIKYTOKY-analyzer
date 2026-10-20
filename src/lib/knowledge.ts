@@ -131,7 +131,7 @@ export async function extractKnowledge(file: UploadFile): Promise<KnowledgeDocum
     try {
       const { extractText } = await import("unpdf");
       const result = await extractText(new Uint8Array(buffer), { mergePages: true });
-      if (result.totalPages > 200) throw new HttpError(413, "This PDF has more than 200 pages. Upload a shorter knowledge document.");
+      if (result.totalPages > 5000) throw new HttpError(413, "This PDF has more than 5,000 pages. Split it into volumes.");
       text = result.text;
     } catch (error) {
       if (error instanceof HttpError) throw error;

@@ -66,7 +66,7 @@ export type Research = {
   generatedAt: string;
   model: string;
 };
-export type KnowledgeDocument = { id: string; name: string; text: string; uploadedAt: string };
+export type KnowledgeDocument = { id: string; name: string; text: string; uploadedAt: string; pageCount?:number; extraction?:string };
 export type KnowledgeCitation = { documentId: string; quote: string; supports: string };
 export type ScriptBeat = { start: number; end: number; spoken: string; onScreen: string; visual: string };
 export type GeneratedScript = {

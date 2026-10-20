@@ -42,7 +42,7 @@ export const researchSchema = z.object({
   opportunities: z.array(z.string().max(5000)).max(20), limitations: z.array(z.string().max(5000)).max(20),
   sourceIds: z.array(z.string().max(200)).max(20), generatedAt: z.iso.datetime(), model: z.string().max(200)
 });
-export const knowledgeSchema = z.object({ id: z.string().min(1).max(200), name: z.string().min(1).max(300), text: z.string().trim().min(1).max(50000), uploadedAt: z.iso.datetime() });
+export const knowledgeSchema = z.object({ id: z.string().min(1).max(200), name: z.string().min(1).max(300), text: z.string().trim().min(1).max(12000000), uploadedAt: z.iso.datetime(),pageCount:z.number().int().min(1).max(5000).optional(),extraction:z.string().max(300).optional() });
 export const outcomeSchema = z.object({ id: z.string().max(200), scriptTitle: z.string().max(500), url: z.string().max(2048), publishedAt: z.iso.datetime(), snapshots: z.array(snapshotSchema).max(100), notes: z.string().max(5000) });
 export const scriptsRequest = z.object({ brief: briefSchema, research: researchSchema, videos,
   knowledge: z.array(knowledgeSchema).min(1).max(20).refine(docs => docs.reduce((total, doc) => total + doc.text.length, 0) <= 100000, "Select knowledge totaling at most 100,000 characters.").refine(docs => new Set(docs.map(d => d.id)).size === docs.length, "Knowledge IDs must be unique."),

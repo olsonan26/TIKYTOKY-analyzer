@@ -19,6 +19,7 @@ from .pipeline import run_research, run_local_media
 from .store import JobStore
 from .manual_login import ManualLogin
 from .web_research import research_python
+from .knowledge import run_knowledge
 
 class ResearchRequest(BaseModel):
     projectId: str = Field(default="", max_length=200)
@@ -55,7 +56,7 @@ async def consume():
             continue
         store.update(job["id"], "running")
         try:
-            runner = run_local_media if job["request"].get("kind") == "local-media" else run_research
+            runner = run_knowledge if job["request"].get("kind") == "knowledge" else run_local_media if job["request"].get("kind") == "local-media" else run_research
             result = await runner(job["request"], store, job["id"])
             if store.get(job["id"])["status"] == "cancel_requested":
                 raise asyncio.CancelledError()
@@ -84,14 +85,14 @@ app.add_middleware(CORSMiddleware, allow_origins=allowed_origins(), allow_method
 
 @app.middleware("http")
 async def private_network_and_limits(request: Request, call_next):
-    cap = 50_000_000 if request.url.path == "/v1/media" else 16000
+    cap = 100_000_000 if request.url.path == "/v1/knowledge" else 50_000_000 if request.url.path == "/v1/media" else 16000
     try:
         length = int(request.headers.get("content-length", "0") or "0")
     except ValueError:
         return JSONResponse({"detail": "Invalid content length."}, status_code=400)
     if length > cap or length < 0:
         return JSONResponse({"detail": f"Request exceeds the {cap}-byte limit."}, status_code=413)
-    if request.method == "POST" and request.url.path != "/v1/media":
+    if request.method == "POST" and request.url.path not in {"/v1/media","/v1/knowledge"}:
         body = bytearray()
         async for chunk in request.stream():
             body.extend(chunk)
@@ -120,7 +121,28 @@ def status():
 
 @app.get("/v1/jobs", dependencies=[Depends(authenticate)])
 def jobs():
-    return {"jobs": store.recent()}
+    return {"jobs": store.recent(exclude_kind="knowledge")}
+
+@app.post("/v1/knowledge", dependencies=[Depends(authenticate)])
+async def upload_knowledge(request:Request, name:str="Knowledge book.pdf"):
+    check_queue()
+    name=name.replace("\\","/").split("/")[-1][:160]
+    if not name.lower().endswith(".pdf"):
+        raise HTTPException(415,"Large local book extraction accepts searchable PDF files.")
+    directory=DATA_ROOT/"uploads"
+    directory.mkdir(parents=True,exist_ok=True)
+    path=directory/f"{uuid.uuid4().hex}.pdf"
+    total=0
+    try:
+        with path.open("xb") as file:
+            async for chunk in request.stream():
+                total+=len(chunk)
+                if total>100_000_000:raise HTTPException(413,"Choose a PDF smaller than 100 MB.")
+                file.write(chunk)
+        if not total:raise HTTPException(400,"Choose a nonempty PDF.")
+        return store.create({"kind":"knowledge","subject":name,"name":name,"uploadPath":str(path)})
+    except BaseException:
+        path.unlink(missing_ok=True);raise
 
 @app.post("/v1/jobs", dependencies=[Depends(authenticate)])
 def create_job(request: ResearchRequest):
@@ -179,7 +201,7 @@ def cancel_job(identifier: str):
     if job["status"] not in {"queued", "running"}:
         return job
     store.update(identifier, "cancelled" if job["status"] == "queued" else "cancel_requested", error="Cancellation requested; an active bounded operation may finish before stopping.")
-    if job["status"] == "queued" and job["request"].get("kind") == "local-media":
+    if job["status"] == "queued" and job["request"].get("kind") in {"local-media","knowledge"}:
         from pathlib import Path
         path = Path(job["request"]["uploadPath"]).resolve()
         if path.parent == (DATA_ROOT / "uploads").resolve():

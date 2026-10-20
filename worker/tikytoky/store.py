@@ -37,9 +37,14 @@ class JobStore:
             return None
         return {"id": row["id"], "status": row["status"], "request": json.loads(row["request"]), "result": json.loads(row["result"]) if row["result"] else None, "error": row["error"], "events": json.loads(row["events"]), "createdAt": row["created_at"], "updatedAt": row["updated_at"]}
 
-    def recent(self) -> list[dict[str, Any]]:
+    def recent(self, exclude_kind: str | None = None) -> list[dict[str, Any]]:
         with self.lock:
-            ids = [row[0] for row in self.db.execute("SELECT id FROM jobs ORDER BY created_at DESC LIMIT 30")]
+            query = "SELECT id FROM jobs"
+            parameters = ()
+            if exclude_kind is not None:
+                query += " WHERE COALESCE(json_extract(request, '$.kind'), '') != ?"
+                parameters = (exclude_kind,)
+            ids = [row[0] for row in self.db.execute(query + " ORDER BY created_at DESC LIMIT 30", parameters)]
         return [self.get(identifier) for identifier in ids]
 
     def next_queued(self) -> dict[str, Any] | None:
