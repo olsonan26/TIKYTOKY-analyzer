@@ -10,20 +10,24 @@ The five repositories supply useful ideas, but do not collectively supply a comp
 | [HOOK_ANALYZER source audit](research/analysis-engines.md), commit `e03d930b3f19f412be1f02c33dad2d414cd14101` | Synthetic retention/training labels, incomplete licensing and unexpected remote upload behavior | No upstream code copied; no retention curve presented as measured; explicit provider boundaries |
 | [AdLab source audit](research/extraction-and-adlab.md), commit `59f792a5546c00b0a377ea550e065e9ea26e696e` | Valuable creative framework; discovery is an unbuilt plan and extraction is external | Original hook/story/CTA research plus provider-backed discovery |
 | [TikTok Video Analyzer source audit](research/extraction-and-adlab.md), commit `484ae10d508e902354bd2acd971b0c0839480bcb` | Real extraction CLI, but missing discovery/ranking/generation and flawed metadata/timestamp handling | Structured metadata, genuine observation history, source timestamps, content extraction |
-| [TikTok Analytics source audit](research/metrics-and-discovery.md), commit `d0afad7bdbc333b27dcc1d686eaeba1363aa0b44` | Own-account APIs are not arbitrary niche discovery; source contains invented historical baseline behavior | Apify search sampling, actual snapshot growth, null unknowns, no backdated metrics |
+| [TikTok Analytics source audit](research/metrics-and-discovery.md), commit `d0afad7bdbc333b27dcc1d686eaeba1363aa0b44` | Own-account APIs are not arbitrary niche discovery; source contains invented historical baseline behavior | Public-browser sampling, actual snapshot growth, null unknowns, no backdated metrics; optional cloud collection |
 
 ## How the integrated system studies content
 
 ```mermaid
 flowchart LR
-  Q["Chosen niche and date window"] --> D["Apify or YouTube search"]
+  Q["Chosen niche and date window"] --> D["Local Browser Use discovery and Creative Center"]
+  D --> B["TikTok-Api secondary public metadata"]
+  B --> M
   D --> M["Real counters and dated observations"]
   M --> R["Rank the found sample"]
   R --> E["Acquire selected content evidence"]
-  E --> T["Supadata speech transcript when configured"]
-  E --> F["Available footage, offline FFmpeg, actual frame timestamps"]
+  E --> T["Local faster-whisper timestamped speech"]
+  E --> F["yt-dlp, offline FFmpeg, actual frame timestamps"]
   T --> A["DeepSeek evidence-based analysis"]
   F --> A
+  E --> W["GPT Researcher, Crawl4AI, optional SearXNG"]
+  W --> P
   A --> P["Source-linked pattern library"]
   K["User knowledge and exact citations"] --> G["Original scripts"]
   P --> G
@@ -43,4 +47,4 @@ The seven names and study focuses came from the user. Reference checks used crea
 
 ## Verification and unresolved external requirements
 
-See [VERIFICATION.md](VERIFICATION.md) for final checks. TikTok discovery needs Apify credentials/credits and live account validation. Speech extraction needs Supadata or a supplied transcript. Vercel source readiness and local production verification are separate from actual cloud deployment. The implementation enforces evidence boundaries and rejects invalid output; AI consistency checking remains fallible.
+See [VERIFICATION.md](VERIFICATION.md) for final checks. The primary pipeline uses the integrated local Python worker; Apify and Supadata are optional cloud fallbacks. Real TikTok probes reached login/access restrictions and empty responses, so successful platform collection is not claimed. Local upload, speech transcription, frame vision, source-bounded research, knowledge-cited script generation and production build checks passed in their documented scopes. Vercel source readiness is separate from actual cloud deployment. The implementation enforces evidence boundaries and rejects invalid output; AI consistency checking remains fallible.

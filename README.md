@@ -14,7 +14,7 @@ From the repository root:
 
 ```powershell
 npm ci
-Copy-Item .env.example .env.local
+if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }
 # Set OPENROUTER_API_KEY in .env.local.
 .\worker\setup.ps1
 .\Start-TikyToky.ps1

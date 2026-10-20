@@ -40,7 +40,7 @@ The browser smoke used an isolated temporary browser context. Its test clip is e
 - ASR subprocess caches are isolated under worker data, avoiding inherited Hugging Face caches on an unavailable external drive.
 - Browser Use 0.13.11 forces DeepSeek navigation to DOM mode. Actual frame interpretation uses the separate direct vision-capable OpenRouter call, verified with decoded images.
 - SearXNG configuration, loopback Docker Compose service, and startup script are provided. This computer's Docker Desktop backend fails during startup. No local SearXNG search is claimed as successful. Broader web enrichment reports that limitation while source-bounded comparison remains available.
-- The initial pushed dashboard checkpoint passed GitHub's Linux build/test workflow. Final commit workflow status must be checked separately.
+- Both GitHub Linux jobs passed for application/CI commit `a9fb66f57e9e8a3c6f0e2adb1cf1dc142c2e4e5d`: dashboard dependency install, tests, TypeScript and production build; and worker locked-dependency install, research lockfile check and tests. [Verified workflow run](https://github.com/olsonan26/TIKYTOKY-analyzer/actions/runs/39387093843). The first worker run exposed missing runner FFmpeg; the workflow now installs it explicitly before verification. Subsequent changes only clarify documentation.
 - No Vercel production deployment has been performed or verified. No automatic TikTok publishing or unattended daily scheduler is included.
 
 ## Reproduce

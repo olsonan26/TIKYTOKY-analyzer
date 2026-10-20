@@ -7,7 +7,7 @@ The Vercel dashboard connects directly to this worker on the same computer. Brow
 Install Node.js 22+, Python 3.12, uv, and FFmpeg/FFprobe. From the repository root:
 
 ```powershell
-Copy-Item .env.example .env.local
+if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }
 # Add your OpenRouter key to .env.local; never commit it.
 Copy-Item worker/.env.example worker/.env
 ./worker/setup.ps1

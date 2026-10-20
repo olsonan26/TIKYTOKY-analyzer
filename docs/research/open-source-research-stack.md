@@ -57,3 +57,9 @@ An operator-managed instance can be reached through `SEARXNG_URL`, normally `htt
 ## Verification so far
 
 Thirteen coordinator tests passed under local Python 3.12, without external network or paid provider calls. They cover public-source rejection, private DNS answers, missing evidence labels, corpus bounds, deterministic source selection, environment restoration, known/unknown citation URLs and absent citations, missing dependencies/keys, unavailable search, and a missing isolated runtime. The Windows sandbox blocked asyncio's socket support; the same tests passed with ordinary host socket access. Unit tests with mocked synthesis do not establish a successful real GPT Researcher/provider run. Record that separately after dependency installation.
+
+## Installed live verification — October 20, 2026
+
+The isolated GPT Researcher 0.16.1/Crawl4AI 0.9.5 environment installed and imported successfully. A real Crawl4AI request extracted the official Browser Use repository page; actual GPT Researcher planning and writing completed a 1,798-character report with the supplied GitHub source citation and explicit missing-evidence limits. The output was software-documentation analysis, not viral-video findings. Reproduce with the opt-in `worker/tests/smoke_research_live.py` script; it uses the configured OpenRouter credential and can consume credits.
+
+The optional local SearXNG service did not start: this host's Docker Desktop backend failed during initialization. No successful SearXNG query is claimed. The source-bounded report path works without broader search and reports the unavailable enrichment. See [the final verification record](../VERIFICATION.md).
