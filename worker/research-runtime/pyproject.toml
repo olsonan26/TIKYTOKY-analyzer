@@ -1,0 +1,14 @@
+[project]
+name = "tikytoky-research-runtime"
+version = "0.1.0"
+description = "Isolated GPT Researcher and Crawl4AI runtime; MCP 1.x cannot share Browser Use's MCP 2.x environment"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "gpt-researcher==0.16.1",
+  "crawl4ai==0.9.5",
+  "httpx>=0.28,<1",
+  "python-dotenv>=1.0,<2"
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,13 @@
+# Third-party boundaries
+
+The application is original code. The five reviewed repositories are referenced in [research](research/) and are not vendored into this project. The clean upstream snapshots were used for static inspection and remain outside the application repository.
+
+Runtime/build dependencies are installed through npm and retain their own license files and copyright notices. `package-lock.json` pins the dependency resolution. This document is a dependency record, not a commercial-rights certification for third-party content or media.
+
+Automatic visual study uses the separate `ffmpeg-static` executable as an offline subprocess. The package is licensed GPL-3.0-or-later; its included license is preserved at [licenses/ffmpeg-static-GPL-3.0.txt](licenses/ffmpeg-static-GPL-3.0.txt). Source and build provenance are provided by [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static), [its binary downloads](https://github.com/eugeneware/ffmpeg-static/tree/master/packages), [FFmpeg source](https://git.ffmpeg.org/ffmpeg.git), and the binary's platform-specific `README`/`LICENSE` files installed inside `node_modules/ffmpeg-static`. The installed Windows build used for local tests identifies FFmpeg 6.1.1 from [Gyan](https://www.gyan.dev/ffmpeg/builds/), source commit [e38092ef93](https://github.com/FFmpeg/FFmpeg/commit/e38092ef93). Vercel installs the Linux build; preserve its corresponding bundled build/source and license notices when redistributing a deployment artifact.
+
+No downloaded creator footage, transcripts, user knowledge, API credentials, upstream database backups or upstream temporary media are committed. Creator profile cards do not imply affiliation or endorsement. Publicly available material and available provider downloads do not themselves establish permission for republishing that material; the tool writes original scripts and uses reference mechanics.
+
+The worker installs, rather than vendors, Browser Use (MIT), TikTok-Api (MIT), Playwright MCP (Apache-2.0), GPT Researcher (see its Apache-2.0 LICENSE; metadata differs), yt-dlp (Unlicense with dependency exceptions), faster-whisper (MIT), Crawl4AI (Apache-2.0 plus attribution), and SearXNG (AGPL-3.0-or-later). Exact inspected revisions, compatibility constraints, and links are recorded in [research](research/). Keep installed dependency notices and corresponding source obligations when redistributing software or operating modified AGPL services. The supplied SearXNG configuration runs the upstream image without copying its source into this project.
+
+This product includes software developed by UncleCode (https://x.com/unclecode) as part of the Crawl4AI project (https://github.com/unclecode/crawl4ai).

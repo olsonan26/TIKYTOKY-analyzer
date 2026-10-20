@@ -1,0 +1,25 @@
+# A private worker service using unchanged SearxNG engine defaults.
+# The startup script supplies SEARXNG_SECRET through a gitignored env file.
+use_default_settings: true
+
+general:
+  instance_name: TIKYTOKY local research
+  enable_metrics: false
+
+search:
+  safe_search: 1
+  formats:
+    - html
+    - json
+
+server:
+  bind_address: 0.0.0.0
+  port: 8080
+  public_instance: false
+  limiter: false
+  image_proxy: false
+  method: GET
+
+ui:
+  static_use_hash: true
+

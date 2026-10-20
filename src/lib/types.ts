@@ -1,0 +1,160 @@
+export type Platform = "tiktok" | "youtube" | "instagram" | "other";
+export type MetricSnapshot = {
+  observedAt: string;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  source: string;
+};
+export type FrameEvidence = { seconds: number; image: string };
+export type Video = {
+  id: string;
+  url: string;
+  platform: Platform;
+  title: string;
+  creator: string;
+  publishedAt: string | null;
+  duration: number | null;
+  followers: number | null;
+  thumbnail?: string;
+  mediaUrl?: string;
+  transcript?: string;
+  transcriptSource?: string;
+  onScreenText?: string;
+  visualNotes?: string;
+  frames?: FrameEvidence[];
+  snapshots: MetricSnapshot[];
+  source: string;
+  fetchedAt: string;
+};
+export type RankedVideo = Video & {
+  score: number | null;
+  engagementRate: number | null;
+  viewsPerHour: number | null;
+  followerMultiple: number | null;
+  growthPerHour: number | null;
+};
+export type Pattern = {
+  name: string;
+  explanation: string;
+  videoIds: string[];
+  evidence: string;
+  confidence: "low" | "medium" | "high";
+};
+export type VideoAnalysis = {
+  videoId: string;
+  hook: string;
+  structure: string;
+  visualTechnique: string;
+  audioTechnique: string;
+  curiosity: string;
+  cta: string;
+  attentionRisks: string[];
+  evidenceLevel: "metadata" | "transcript" | "frames" | "transcript_and_frames";
+};
+export type Research = {
+  summary: string;
+  patterns: Pattern[];
+  videos: VideoAnalysis[];
+  opportunities: string[];
+  limitations: string[];
+  sourceIds: string[];
+  generatedAt: string;
+  model: string;
+};
+export type KnowledgeDocument = { id: string; name: string; text: string; uploadedAt: string };
+export type KnowledgeCitation = { documentId: string; quote: string; supports: string };
+export type ScriptBeat = { start: number; end: number; spoken: string; onScreen: string; visual: string };
+export type GeneratedScript = {
+  title: string;
+  angle: string;
+  hook: string;
+  beats: ScriptBeat[];
+  caption: string;
+  hashtags: string[];
+  cta: string;
+  sourceIds: string[];
+  patternNames: string[];
+  hypothesis: string;
+  testPlan: string;
+  knowledgeCitations: KnowledgeCitation[];
+};
+export type ScriptBatch = { scripts: GeneratedScript[]; generatedAt: string; model: string };
+export type Brief = {
+  subject: string;
+  audience: string;
+  brand: string;
+  offer: string;
+  tone: string;
+  duration: number;
+  cta: string;
+  count: number;
+  deliveryStyle?: "direct-teaching" | "story-led" | "reflective";
+  studyCreators?: string[];
+};
+export type Outcome = {
+  id: string;
+  scriptTitle: string;
+  url: string;
+  publishedAt: string;
+  snapshots: MetricSnapshot[];
+  notes: string;
+};
+export type Project = {
+  id: string;
+  subject: string;
+  videos: Video[];
+  research?: Research;
+  scripts?: ScriptBatch;
+  outcomes: Outcome[];
+  createdAt: string;
+  updatedAt: string;
+  knowledge?: KnowledgeDocument[];
+  draft?: Video;
+  coaching?: Coaching;
+  plan?: GrowthPlan;
+};
+export type DiscoveryJob = {
+  id: string;
+  status: "RUNNING" | "SUCCEEDED" | "FAILED" | "ABORTED" | "TIMED-OUT";
+  datasetId?: string;
+  subject: string;
+  limit: number;
+  videos?: Video[];
+  message?: string;
+  coverage: string;
+};
+export type ServiceStatus = {
+  authenticated: boolean;
+  passwordRequired: boolean;
+  ai: boolean;
+  model: string;
+  tiktok: boolean;
+  youtube: boolean;
+  transcripts: boolean;
+};
+
+export type Coaching = {
+  verdict: string;
+  strengths: string[];
+  fixes: { priority: "high" | "medium" | "low"; moment: string; problem: string; change: string; referenceVideoIds: string[] }[];
+  revisedHook: string;
+  suggestedCuts: string[];
+  prePublishChecklist: string[];
+  testHypothesis: string;
+  limitations: string[];
+  model: string;
+  generatedAt: string;
+};
+export type GrowthPlan = {
+  timezone: "America/Denver";
+  generatedAt: string;
+  timingBasis: "experiment" | "observed";
+  timingExplanation: string;
+  schedule: { utc: string; localLabel: string; rationale: string }[];
+  duration: { seconds: number; lower: number; upper: number; sampleSize: number; basis: string };
+  experiments: { title: string; change: string; measure: string }[];
+  checklist: string[];
+  caveats: string[];
+};
