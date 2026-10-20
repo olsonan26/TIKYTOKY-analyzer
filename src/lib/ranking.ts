@@ -75,6 +75,9 @@ export function normalizeVideos(input: unknown): Video[] {
       mediaUrl: assetUrl(row.mediaUrl ?? row.videoUrl ?? meta.downloadAddr ?? meta.playAddr),
       transcript: str(row.transcript, 40000) || undefined,
       transcriptSource: str(row.transcriptSource, 200) || (row.transcript ? "User import" : undefined),
+      transcriptSegments: Array.isArray(row.transcriptSegments) ? row.transcriptSegments.slice(0,2000).flatMap(value => { const s=obj(value); const start=counter(s.start), end=counter(s.end); return start !== null && end !== null && end >= start && end <= 600 ? [{start,end,text:str(s.text,4000)}] : []; }) : undefined,
+      description: str(row.description ?? row.desc, 10000) || undefined,
+      hashtags: Array.isArray(row.hashtags) ? row.hashtags.filter((x): x is string => typeof x === "string").slice(0,100).map(x=>x.slice(0,200)) : undefined,
       onScreenText: str(row.onScreenText, 10000) || undefined,
       visualNotes: str(row.visualNotes, 10000) || undefined,
       snapshots, source, fetchedAt: iso(row.fetchedAt) || now

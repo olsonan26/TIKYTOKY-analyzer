@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-20T07:06:25.742159+00:00",
+  "subject": "astrology",
+  "limit": 3,
+  "maxSteps": 6,
+  "paidModelCallsAuthorized": true,
+  "browser": {
+    "videos": [],
+    "warnings": [
+      "Browser Use stopped at a login or access challenge. Open the manual-login command; no bypass was attempted."
+    ],
+    "blocked": true,
+    "manualLoginRequired": true,
+    "sources": [
+      "browser-use"
+    ]
+  },
+  "events": [
+    "Browser Use is inspecting the public search sample with DeepSeek; counters will be read separately from actual pages."
+  ]
+}

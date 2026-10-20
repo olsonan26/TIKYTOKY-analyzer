@@ -20,11 +20,13 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import parse_qs, urlparse, urlunparse
+from uuid import uuid4
 
 MAX_DOWNLOAD_BYTES = 50_000_000
 MAX_DURATION_SECONDS = 180
 MAX_FRAMES = 12
 ALLOWED_MODELS = {"tiny", "tiny.en", "base", "base.en", "small", "small.en"}
+LOCAL_FORMATS = "mov,matroska,webm,avi,flv,mpegts"
 
 
 class MediaError(RuntimeError):
@@ -85,11 +87,12 @@ def _inside(path: Path, root: Path) -> Path:
     return resolved
 
 
-def _run(command: list[str], root: Path, timeout: int, *, code: str, max_artifact_bytes: int = 75_000_000) -> tuple[str, str, int]:
+def _run(command: list[str], root: Path, timeout: int, *, code: str, max_artifact_bytes: int = 75_000_000,
+         environment: dict[str, str] | None = None) -> tuple[str, str, int]:
     """Isolate executable output, enforce wall time and total job artifact size."""
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
         try:
-            process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=errors, cwd=str(root),
+            process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=errors, cwd=str(root), env=environment,
                                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except OSError:
             raise MediaError("dependency_missing", "A required worker executable could not be started.") from None
@@ -198,7 +201,7 @@ def download_public_video(url: str, work_dir: Path) -> dict[str, Any]:
 
 def probe_media(path: Path) -> dict[str, Any]:
     path = Path(path).resolve(strict=True)
-    stdout, _, status = _run([_executable("ffprobe"), "-v", "error", "-protocol_whitelist", "file,pipe", "-show_entries",
+    stdout, _, status = _run([_executable("ffprobe"), "-v", "error", "-protocol_whitelist", "file,pipe", "-format_whitelist", LOCAL_FORMATS, "-show_entries",
                              "format=duration,start_time:stream=codec_type,duration,start_time,width,height", "-of", "json", str(path)],
                             path.parent, 20, code="invalid_media")
     try:
@@ -233,7 +236,7 @@ def extract_frames(path: Path, work_dir: Path, max_frames: int = MAX_FRAMES) -> 
     output = frame_dir / "%03d.jpg"
     filters = "setpts=PTS-STARTPTS,select='" + "+".join(conditions) + "',scale=512:512:force_original_aspect_ratio=decrease,showinfo"
     try:
-        _, stderr, status = _run([_executable("ffmpeg"), "-hide_banner", "-nostdin", "-y", "-protocol_whitelist", "file,pipe",
+        _, stderr, status = _run([_executable("ffmpeg"), "-hide_banner", "-nostdin", "-y", "-protocol_whitelist", "file,pipe", "-format_whitelist", LOCAL_FORMATS,
                                   "-i", str(path), "-an", "-vf", filters, "-frames:v", str(max_frames), "-fps_mode", "passthrough", "-q:v", "4", str(output)],
                                  frame_dir, 45, code="frame_extraction_failed", max_artifact_bytes=5_000_000)
         timestamps = [float(value) for value in re.findall(r"\bn:\s*\d+\s+pts:\s*-?\d+\s+pts_time:([\d.eE+-]+)", stderr)]
@@ -284,17 +287,24 @@ def transcribe_media(path: Path, model_size: str = "base", device: str = "cpu", 
     if importlib.util.find_spec("faster_whisper") is None:
         raise MediaError("dependency_missing", "Install the worker's faster-whisper requirement to transcribe locally.")
     cache = _safe_root(model_cache or path.parent / ".models")
+    # HF reads these on first import. Isolate the ASR subprocess from stale global
+    # cache locations (including Xet/asset caches on disconnected external drives).
+    asr_environment = {**os.environ, "HF_HOME": str(cache / ".hf"), "HF_HUB_CACHE": str(cache),
+                       "HF_XET_CACHE": str(cache / ".xet"), "HF_ASSETS_CACHE": str(cache / ".assets"),
+                       "HF_TOKEN_PATH": str(cache / ".hf" / "token"), "HF_HUB_DISABLE_IMPLICIT_TOKEN": "1",
+                       "HF_HUB_DISABLE_TELEMETRY": "1", "HF_XET_HIGH_PERFORMANCE": "0"}
     with tempfile.TemporaryDirectory(prefix="asr-", dir=path.parent) as temp:
         temp_root = Path(temp)
         audio = temp_root / "audio.wav"
-        _, _, status = _run([_executable("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin", "-y", "-protocol_whitelist", "file,pipe",
+        _, _, status = _run([_executable("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin", "-y", "-protocol_whitelist", "file,pipe", "-format_whitelist", LOCAL_FORMATS,
                              "-i", str(path), "-vn", "-ac", "1", "-ar", "16000", "-t", str(MAX_DURATION_SECONDS), str(audio)],
                             temp_root, 30, code="audio_extraction_failed", max_artifact_bytes=7_000_000)
         if status or not audio.is_file():
             raise MediaError("audio_extraction_failed", "FFmpeg could not decode the video's audio stream.")
         result_file = temp_root / "transcript.json"
         _, _, status = _run([sys.executable, str(Path(__file__).resolve()), "--asr", str(audio), str(result_file), model_size, device,
-                             compute_type, str(cache), "1" if local_files_only else "0"], temp_root, 600, code="transcription_failed", max_artifact_bytes=8_000_000)
+                             compute_type, str(cache), "1" if local_files_only else "0"], temp_root, 600, code="transcription_failed", max_artifact_bytes=8_000_000,
+                            environment=asr_environment)
         if status or not result_file.is_file():
             raise MediaError("transcription_failed", "Local speech recognition could not complete. Check the installed model, network access for first-use model download, and CPU/GPU dependencies.")
         try:
@@ -306,31 +316,57 @@ def transcribe_media(path: Path, model_size: str = "base", device: str = "cpu", 
         return result
 
 
+def _inspect_video(path: Path, video: dict[str, Any], root: Path, model_cache: Path, *, transcribe: bool,
+                   max_frames: int, model_size: str, device: str, compute_type: str, local_files_only: bool) -> dict[str, Any]:
+    details = probe_media(path)
+    frames = extract_frames(path, root, max_frames)
+    result = {"url": video["url"], "video": video, "duration": details["duration"], "frames": frames,
+              "transcript": "", "transcriptSegments": [], "language": None, "transcriptSource": "Not requested", "warnings": []}
+    video["duration"] = details["duration"]
+    if transcribe:
+        try:
+            result.update(transcribe_media(path, model_size, device, compute_type, model_cache, local_files_only=local_files_only))
+        except MediaError as error:
+            result["warnings"].append(error.message)
+            result["transcriptSource"] = "Unavailable: local transcription failed"
+        if result.get("transcript"):
+            video["transcript"] = result["transcript"]
+        video["transcriptSource"] = result["transcriptSource"]
+    video["transcriptSegments"] = result["transcriptSegments"]
+    video["frames"] = frames
+    return result
+
+
 def inspect_public_video(url: str, *, transcribe: bool = True, max_frames: int = MAX_FRAMES, model_size: str = "base", device: str = "cpu",
                          compute_type: str = "int8", work_root: Path | None = None, local_files_only: bool = False) -> dict[str, Any]:
     url = validate_public_url(url)
     base = _safe_root(work_root or Path(tempfile.gettempdir()) / "tikytoky-worker")
-    model_cache = base / ".models"
     with tempfile.TemporaryDirectory(prefix="media-", dir=base) as temp:
         root = Path(temp)
         downloaded = download_public_video(url, root)
-        path = downloaded["path"]
-        details = probe_media(path)
-        frames = extract_frames(path, root, max_frames)
-        result = {"url": url, "video": downloaded["metadata"], "duration": details["duration"], "frames": frames,
-                  "transcript": "", "transcriptSegments": [], "language": None, "transcriptSource": "Not requested", "warnings": []}
-        result["video"]["duration"] = details["duration"]
-        if transcribe:
-            try:
-                result.update(transcribe_media(path, model_size, device, compute_type, model_cache, local_files_only=local_files_only))
-            except MediaError as error:
-                result["warnings"].append(error.message)
-                result["transcriptSource"] = "Unavailable: local transcription failed"
-            if result.get("transcript"):
-                result["video"]["transcript"] = result["transcript"]
-                result["video"]["transcriptSource"] = result["transcriptSource"]
-        result["video"]["frames"] = frames
-        return result
+        return _inspect_video(downloaded["path"], downloaded["metadata"], root, base / ".models", transcribe=transcribe,
+                              max_frames=max_frames, model_size=model_size, device=device, compute_type=compute_type,
+                              local_files_only=local_files_only)
+
+
+def inspect_local_video(path: Path, *, transcribe: bool = True, max_frames: int = MAX_FRAMES, model_size: str = "base", device: str = "cpu",
+                        compute_type: str = "int8", work_root: Path | None = None, local_files_only: bool = False) -> dict[str, Any]:
+    """Inspect an already-authorized upload. Its owner, not this function, deletes it."""
+    try:
+        original = Path(path).resolve(strict=True)
+        size = original.stat().st_size
+        if not original.is_file() or size <= 0:
+            raise OSError()
+    except OSError:
+        raise MediaError("invalid_media", "The uploaded video file could not be read.") from None
+    if size > MAX_DOWNLOAD_BYTES:
+        raise MediaError("size_limit", "The uploaded video exceeds the 50 MB worker limit.")
+    base = _safe_root(work_root or Path(tempfile.gettempdir()) / "tikytoky-worker")
+    video = {"id": f"draft-{uuid4()}", "url": "", "platform": "other", "title": "Uploaded video draft", "creator": "You",
+             "publishedAt": None, "duration": None, "followers": None, "snapshots": [], "source": "Local user upload", "fetchedAt": _now()}
+    with tempfile.TemporaryDirectory(prefix="local-media-", dir=base) as temp:
+        return _inspect_video(original, video, Path(temp), base / ".models", transcribe=transcribe, max_frames=max_frames,
+                              model_size=model_size, device=device, compute_type=compute_type, local_files_only=local_files_only)
 
 
 if __name__ == "__main__":

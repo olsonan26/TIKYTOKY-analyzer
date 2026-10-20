@@ -23,3 +23,12 @@ No blocker remains from those six findings in the inspected source. The followin
 Verification run during this recheck: `npm test` passed **60 tests**. This includes mocked provider contracts and knowledge-grounding rejection cases, real local document extraction, signed-media normalization, session/body-limit tests, and real local FFmpeg frame decoding. These passing tests do not establish paid-provider or deployed browser success. Separate live smoke/deployment records must report their own evidence.
 
 Read the installed Next.js route-handler and authentication guides before assessing the route contracts, as required by this repository's generated `AGENTS.md`.
+
+
+## Final local-worker integration recheck
+
+The completed browser UI uses the persistent worker queue, exact origin allowlist, private bearer token, bounded uploads, actual ASR segments and real decoded frame evidence. Manual login, Browser Use and Playwright MCP share an exclusive profile lease. A blocked source is not converted into fabricated analysis. Exact-date filtering excludes undated/out-of-window candidates.
+
+Reopened jobs can import their original evidence without changing collection timestamps. Worker results return to their originating project; refresh preserves stable IDs by URL. Late AI results are rejected when current evidence, knowledge, outcomes or the creative brief differ. Saved creator/delivery choices survive project reload.
+
+Final local verification: 61 dashboard tests and 45 worker tests plus 6 subtests passed; production build and HTTP/auth smoke passed. A real browser upload completed local ASR and direct vision, with no market counters or saved frame bytes. Mobile navigation passed at 390 pixels. TikTok probes remained blocked/empty; no successful live TikTok collection is claimed. See VERIFICATION.md for the exact scope and remaining infrastructure limits.

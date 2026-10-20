@@ -74,6 +74,10 @@ def normalize_tiktok(raw: dict[str, Any], *, observed_at: str | None = None, sou
         "snapshots": [{"observedAt": observed_at, "views": counter(stats.get("playCount")), "likes": counter(stats.get("diggCount")), "comments": counter(stats.get("commentCount")), "shares": counter(stats.get("shareCount")), "source": source}],
         "source": source, "fetchedAt": observed_at,
     }
+    if isinstance(raw.get("desc"), str):
+        result["description"] = raw["desc"][:10_000]
+    if isinstance(raw.get("textExtra"), list):
+        result["hashtags"] = list(dict.fromkeys(str(tag["hashtagName"])[:200] for tag in raw["textExtra"] if isinstance(tag, dict) and isinstance(tag.get("hashtagName"), str) and tag["hashtagName"]))[:100]
     for field, value in [("thumbnail", media.get("cover") or media.get("originCover")), ("mediaUrl", media.get("downloadAddr") or media.get("playAddr"))]:
         if isinstance(value, str) and urlparse(value).scheme == "https":
             result[field] = value
@@ -131,6 +135,7 @@ async def enrich_videos(videos: list[dict[str, Any]], emit: Callable[[str], None
     profile = data_root() / "tiktok-api"
     profile.mkdir(parents=True, exist_ok=True)
     lease = ProfileLease(data_root() / "tiktok-api-owner.lock")
+    stage = "profile ownership"
     try:
         with lease:
             async with TikTokApi() as api:
@@ -146,6 +151,7 @@ async def enrich_videos(videos: list[dict[str, Any]], emit: Callable[[str], None
 
                 emit("Starting optional TikTok-Api metadata enrichment in its separate browser profile.")
                 async with asyncio.timeout(90):
+                    stage = "public session setup"
                     await api.create_sessions(num_sessions=1, headless=os.getenv("WORKER_HEADLESS", "true").lower() != "false", page_factory=page_factory, browser_context_factory=context_factory, enable_session_recovery=False, timeout=20_000)
                     for index, video in enumerate(updated[:20]):
                         url = canonical_tiktok(str(video.get("url", "")))
@@ -154,6 +160,7 @@ async def enrich_videos(videos: list[dict[str, Any]], emit: Callable[[str], None
                         if await blocked_page(api.sessions[0].page):
                             raise RuntimeError("TikTok presents a login or access challenge.")
                         emit(f"Reading TikTok-Api metadata {index + 1}/{min(20, len(updated))}.")
+                        stage = "public item metadata request"
                         response = await api.make_request(url="https://www.tiktok.com/api/item/detail/", params={"itemId": url.rsplit("/", 1)[-1]}, retries=1, exponential_backoff=False)
                         if not isinstance(response, dict) or response.get("status_code", response.get("statusCode", 0)) not in {0, "0"}:
                             raise RuntimeError("TikTok denied or could not return this public metadata request.")
@@ -168,8 +175,8 @@ async def enrich_videos(videos: list[dict[str, Any]], emit: Callable[[str], None
     except TimeoutError:
         warnings.append("TikTok-Api enrichment reached its 90-second deadline. Partial observed results were kept; no retry was attempted.")
         return {"videos": updated, "warnings": warnings, "blocked": True}
-    except Exception:
+    except Exception as error:
         # Upstream errors may contain cookies or response bodies; do not persist them.
         warnings.append("TikTok-Api could not complete enrichment (dependency, profile lock, login, challenge or denied response). Existing evidence was kept. Resolve access manually; no bypass or retry was attempted.")
-        return {"videos": updated, "warnings": warnings, "blocked": True}
+        return {"videos": updated, "warnings": warnings, "blocked": True, "failureType": type(error).__name__, "failureStage": stage}
     return {"videos": updated, "warnings": warnings, "blocked": False}

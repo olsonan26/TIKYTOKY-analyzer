@@ -4,6 +4,8 @@ import asyncio
 import importlib.metadata
 import os
 import secrets
+import shutil
+import uuid
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -13,8 +15,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .config import DATA_ROOT, allowed_origins, worker_token
-from .pipeline import run_research
+from .pipeline import run_research, run_local_media
 from .store import JobStore
+from .manual_login import ManualLogin
+from .web_research import research_python
 
 class ResearchRequest(BaseModel):
     projectId: str = Field(default="", max_length=200)
@@ -22,13 +26,21 @@ class ResearchRequest(BaseModel):
     limit: int = Field(default=15, ge=1, le=30)
     periodDays: int = Field(default=7, ge=1, le=365)
     studyLimit: int = Field(default=3, ge=0, le=5)
-    creators: list[str] = Field(default_factory=list, max_length=10)
-    hashtags: list[str] = Field(default_factory=list, max_length=10)
+    creators: list[Annotated[str, Field(max_length=200)]] = Field(default_factory=list, max_length=10)
+    hashtags: list[Annotated[str, Field(max_length=200)]] = Field(default_factory=list, max_length=10)
+    urls: list[Annotated[str, Field(max_length=2048)]] | None = Field(default=None, max_length=30)
     webResearch: bool = True
     creativeCenter: bool = True
 
 TOKEN = worker_token()
 store = JobStore(DATA_ROOT / "jobs.sqlite")
+manual_login = ManualLogin()
+
+def check_queue():
+    if manual_login.active:
+        raise HTTPException(409, "Finish the manual browser session before starting research or media jobs.")
+    if sum(job["status"] in {"queued", "running", "cancel_requested"} for job in store.recent()) >= 3:
+        raise HTTPException(429, "At most three jobs can be queued/running. One browser owner runs at a time.")
 
 def authenticate(authorization: Annotated[str | None, Header()] = None):
     provided = authorization.removeprefix("Bearer ") if authorization else ""
@@ -43,7 +55,10 @@ async def consume():
             continue
         store.update(job["id"], "running")
         try:
-            result = await run_research(job["request"], store, job["id"])
+            runner = run_local_media if job["request"].get("kind") == "local-media" else run_research
+            result = await runner(job["request"], store, job["id"])
+            if store.get(job["id"])["status"] == "cancel_requested":
+                raise asyncio.CancelledError()
             store.update(job["id"], "blocked" if result.get("blocked") else "completed", result=result)
         except asyncio.CancelledError:
             store.update(job["id"], "cancelled", error="Cancelled between bounded processing stages. Collected source events remain in the local log.")
@@ -62,14 +77,27 @@ async def lifespan(app: FastAPI):
         await task
     except asyncio.CancelledError:
         pass
+    await manual_login.close()
 
 app = FastAPI(title="TIKY TOKY Local Research Worker", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=allowed_origins(), allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Authorization", "Content-Type"], allow_credentials=False)
 
 @app.middleware("http")
 async def private_network_and_limits(request: Request, call_next):
-    if int(request.headers.get("content-length", "0") or "0") > 16000:
-        return JSONResponse({"detail": "Worker requests are limited to 16 KB."}, status_code=413)
+    cap = 50_000_000 if request.url.path == "/v1/media" else 16000
+    try:
+        length = int(request.headers.get("content-length", "0") or "0")
+    except ValueError:
+        return JSONResponse({"detail": "Invalid content length."}, status_code=400)
+    if length > cap or length < 0:
+        return JSONResponse({"detail": f"Request exceeds the {cap}-byte limit."}, status_code=413)
+    if request.method == "POST" and request.url.path != "/v1/media":
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > cap:
+                return JSONResponse({"detail": "Worker JSON requests are limited to 16 KB."}, status_code=413)
+        request._body = bytes(body)
     response = await call_next(request)
     if request.headers.get("origin", "").rstrip("/") in allowed_origins():
         response.headers["Access-Control-Allow-Private-Network"] = "true"
@@ -88,7 +116,7 @@ def status():
             versions[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             versions[name] = None
-    return {"ready": all(versions.values()), "versions": versions, "aiConfigured": bool(os.getenv("OPENROUTER_API_KEY")), "model": os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash"), "headless": os.getenv("WORKER_HEADLESS", "true") != "false", "primary": "browser-use", "cloudKeysRequired": False, "pendingJobs": sum(job["status"] in {"queued", "running"} for job in store.recent())}
+    return {"ready": all(versions.values()), "versions": versions, "aiConfigured": bool(os.getenv("OPENROUTER_API_KEY")), "model": os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash"), "headless": os.getenv("WORKER_HEADLESS", "true") != "false", "primary": "browser-use", "cloudKeysRequired": False, "pendingJobs": sum(job["status"] in {"queued", "running", "cancel_requested"} for job in store.recent()), "researchRuntime": research_python().is_file(), "ffmpeg": bool(shutil.which("ffmpeg")), "ffprobe": bool(shutil.which("ffprobe")), "manualLogin": manual_login.status()}
 
 @app.get("/v1/jobs", dependencies=[Depends(authenticate)])
 def jobs():
@@ -96,9 +124,47 @@ def jobs():
 
 @app.post("/v1/jobs", dependencies=[Depends(authenticate)])
 def create_job(request: ResearchRequest):
-    if sum(job["status"] in {"queued", "running"} for job in store.recent()) >= 3:
-        raise HTTPException(429, "At most three jobs can be queued/running. One browser owner runs at a time.")
+    check_queue()
     return store.create(request.model_dump())
+
+@app.post("/v1/media", dependencies=[Depends(authenticate)])
+async def upload_media(request: Request, projectId: str = ""):
+    check_queue()
+    if len(projectId) > 200:
+        raise HTTPException(400, "Project identifier is too long.")
+    directory = DATA_ROOT / "uploads"
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{uuid.uuid4().hex}.upload"
+    size = 0
+    try:
+        with path.open("xb") as output:
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > 50_000_000:
+                    raise HTTPException(413, "Choose a video smaller than 50 MB.")
+                output.write(chunk)
+        if not size:
+            raise HTTPException(400, "Choose a nonempty video file.")
+        return store.create({"kind": "local-media", "projectId": projectId, "subject": "Your uploaded draft", "uploadPath": str(path)})
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
+
+@app.post("/v1/browser/login", dependencies=[Depends(authenticate)])
+async def begin_login():
+    if any(job["status"] in {"queued", "running", "cancel_requested"} for job in store.recent()):
+        raise HTTPException(409, "Wait for current jobs to finish before opening manual login.")
+    manual_login.start()
+    return manual_login.status()
+
+@app.post("/v1/browser/close", dependencies=[Depends(authenticate)])
+async def finish_login():
+    await manual_login.close()
+    return manual_login.status()
+
+@app.get("/v1/browser/login", dependencies=[Depends(authenticate)])
+def login_status():
+    return manual_login.status()
 
 @app.get("/v1/jobs/{identifier}", dependencies=[Depends(authenticate)])
 def get_job(identifier: str):
@@ -113,4 +179,9 @@ def cancel_job(identifier: str):
     if job["status"] not in {"queued", "running"}:
         return job
     store.update(identifier, "cancelled" if job["status"] == "queued" else "cancel_requested", error="Cancellation requested; an active bounded operation may finish before stopping.")
+    if job["status"] == "queued" and job["request"].get("kind") == "local-media":
+        from pathlib import Path
+        path = Path(job["request"]["uploadPath"]).resolve()
+        if path.parent == (DATA_ROOT / "uploads").resolve():
+            path.unlink(missing_ok=True)
     return store.get(identifier)

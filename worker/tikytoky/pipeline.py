@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 import httpx
 
@@ -11,6 +12,25 @@ from .store import JobStore, utc_now
 def merged(existing: dict, new: dict) -> dict:
     snapshots = {f"{s['observedAt']}|{s.get('source','')}": s for s in existing.get("snapshots", []) + new.get("snapshots", []) if s.get("observedAt")}
     return {**existing, **new, "id": existing.get("id") or new.get("id"), "snapshots": sorted(snapshots.values(), key=lambda s: s["observedAt"])[-100:]}
+
+def filter_dates(videos: list[dict], period_days: int, now: datetime | None = None) -> tuple[list[dict], list[str]]:
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=period_days)
+    retained, unknown = [], 0
+    for video in videos:
+        try:
+            published = datetime.fromisoformat(str(video.get("publishedAt") or "").replace("Z", "+00:00"))
+            if published.tzinfo is None:
+                raise ValueError()
+        except ValueError:
+            unknown += 1
+            continue
+        if cutoff <= published <= now:
+            retained.append(video)
+    warnings = [f"Excluded {unknown} candidate(s) with unavailable publication dates; their membership in this time window could not be verified."] if unknown else []
+    if len(videos) - len(retained) - unknown:
+        warnings.append("Excluded candidates outside the exact requested publication window.")
+    return retained, warnings
 
 async def describe_frames(video: dict, frames: list[dict]) -> dict:
     if not frames:
@@ -62,6 +82,8 @@ async def run_research(request: dict, store: JobStore, identifier: str) -> dict:
         videos = enrichment.get("videos", videos)
         warnings.extend(enrichment.get("warnings", []))
     videos = store.append_history(videos)
+    videos, date_warnings = filter_dates(videos, request["periodDays"])
+    warnings.extend(date_warnings)
     cancelled()
 
     def views(video: dict) -> float:
@@ -103,4 +125,27 @@ async def run_research(request: dict, store: JobStore, identifier: str) -> dict:
         except Exception as error:
             warnings.append(f"Deep research stage failed ({type(error).__name__}); collected source evidence remains available.")
     cancelled()
-    return {"projectId": request.get("projectId", ""), "subject": request["subject"], "videos": videos, "report": investigation.get("report", ""), "sources": investigation.get("sources", []), "warnings": list(dict.fromkeys(warnings)), "coverage": discovery.get("coverage", "A bounded public-source sample, not an exhaustive worldwide ranking."), "generatedAt": utc_now(), "liveCollection": True, "blocked": bool(discovery.get("blocked") and not videos), "speechVideos": sum(bool(v.get("transcript")) for v in videos), "visualVideos": sum(bool(v.get("visualNotes")) for v in videos)}
+    return {"projectId": request.get("projectId", ""), "subject": request["subject"], "videos": videos, "report": investigation.get("report", ""), "sources": investigation.get("sources", []), "warnings": list(dict.fromkeys(warnings)), "coverage": discovery.get("coverage", "A bounded public-source sample, not an exhaustive worldwide ranking."), "generatedAt": utc_now(), "liveCollection": bool(videos), "blocked": bool(discovery.get("blocked") and not videos), "speechVideos": sum(bool(v.get("transcript")) for v in videos), "visualVideos": sum(bool(v.get("visualNotes")) for v in videos)}
+
+async def run_local_media(request: dict, store: JobStore, identifier: str) -> dict:
+    from pathlib import Path
+    from .media import inspect_local_video
+    path = Path(request["uploadPath"]).resolve()
+    uploads = (DATA_ROOT / "uploads").resolve()
+    if path.parent != uploads or not path.is_file():
+        raise ValueError("The queued local upload is unavailable.")
+    try:
+        store.event(identifier, "Decoding your uploaded draft locally and transcribing with faster-whisper.")
+        media = await asyncio.to_thread(inspect_local_video, path, work_root=DATA_ROOT / "media", model_size=os.getenv("WHISPER_MODEL", "base"), device=os.getenv("WHISPER_DEVICE", "cpu"), compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"))
+        video = media["video"]
+        warnings = list(media.get("warnings", []))
+        if media.get("frames"):
+            try:
+                store.event(identifier, "Interpreting actual draft frames with the vision model.")
+                video.update(await describe_frames(video, media["frames"]))
+            except Exception as error:
+                warnings.append(f"Draft visual interpretation failed ({type(error).__name__}); no visual findings were invented.")
+        video.pop("frames", None)
+        return {"projectId": request.get("projectId", ""), "subject": "Your uploaded draft", "draft": video, "videos": [], "report": "", "sources": [], "warnings": warnings, "coverage": "Your supplied file only; it is not public-market research.", "generatedAt": utc_now(), "liveCollection": False, "blocked": False, "speechVideos": int(bool(video.get("transcript"))), "visualVideos": int(bool(video.get("visualNotes")))}
+    finally:
+        path.unlink(missing_ok=True)

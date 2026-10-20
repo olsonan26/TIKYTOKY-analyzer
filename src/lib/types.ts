@@ -21,6 +21,9 @@ export type Video = {
   mediaUrl?: string;
   transcript?: string;
   transcriptSource?: string;
+  transcriptSegments?: {start: number; end: number; text: string}[];
+  description?: string;
+  hashtags?: string[];
   onScreenText?: string;
   visualNotes?: string;
   frames?: FrameEvidence[];

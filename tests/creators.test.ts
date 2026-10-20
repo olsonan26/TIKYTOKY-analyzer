@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { creatorStudies, creativeDirections } from "../src/lib/creators";
 import { briefSchema } from "../src/lib/validation";
+import { parseSavedBrief } from "../src/lib/client-media";
 test("all seven creator references are study lenses with a factual-source boundary", () => {
   assert.equal(creatorStudies.length, 7);
   assert.equal(new Set(creatorStudies.map(c => c.id)).size, 7);
@@ -9,6 +10,10 @@ test("all seven creator references are study lenses with a factual-source bounda
   const direction = creativeDirections("direct-teaching", ["alex-hormozi", "moon-omens"]);
   assert.match(direction, /short spoken sentences/); assert.match(direction, /not evidence of success/); assert.match(direction, /do not pretend/i);
   assert.match(direction, /Alex Hormozi/); assert.doesNotMatch(direction, /Zach King/);
+});
+test("saved creator choices and delivery survive browser reload and export",()=>{
+  const brief = { subject:"Numerology",audience:"",brand:"",offer:"",tone:"Clear",duration:30,cta:"",count:1,deliveryStyle:"reflective" as const,studyCreators:["moon-omens","zach-king"] };
+  assert.deepEqual(parseSavedBrief(JSON.parse(JSON.stringify(brief))),brief);
 });
 test("any niche can use teaching direction without requiring a commercial offer", () => {
   const brief = briefSchema.parse({ subject: "Woodworking", audience: "New hobbyists", brand: "", offer: "", tone: "Clear", duration: 37, cta: "", count: 1, deliveryStyle: "direct-teaching", studyCreators: ["zach-king"] });

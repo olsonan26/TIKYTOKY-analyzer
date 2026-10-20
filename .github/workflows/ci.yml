@@ -17,3 +17,33 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      UV_CONCURRENT_DOWNLOADS: 4
+      HF_HUB_OFFLINE: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.3"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "worker/uv.lock"
+      - name: Verify FFmpeg tools
+        run: |
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version
+          ffprobe -version
+      - name: Check research runtime lockfile
+        run: uv lock --check --project research-runtime
+      - name: Install worker dependencies
+        run: uv sync --frozen --project .
+      - name: Run worker unit tests
+        run: uv run --frozen --project . python -m pytest tests

@@ -1,69 +1,78 @@
 # TIKY TOKY feature checklist
 
-Source review: October 19, 2026. `IMPLEMENTED` means working code is present; it does not certify a live provider account or a deployed service. `REQUIRES_PROVIDER_CONFIGURATION` means the adapter exists but needs its server credentials, available credits/quota, and a successful live check. `NOT_IMPLEMENTED` identifies capabilities this version does not provide.
+Reviewed October 20, 2026. **Implemented** means code is present. **Locally checked** identifies actual local checks. **Live limited** means a real provider or platform was exercised but the stated limitation remains. Neither implementation nor passing tests certifies production access.
 
-## Research and fresh performance data
+## Integrated dashboard and local worker
 
-| Status | Feature | Delivered behavior and limits |
+| Feature | Delivered behavior | Verification and limits |
 | --- | --- | --- |
-| IMPLEMENTED | Any subject or niche | Freeform subjects, separate research projects, and configurable audience/brand/offer/tone. Supports the user's astrology and numerology focus without restricting other niches or importing a built-in doctrine. |
-| IMPLEMENTED | Time windows and manual refresh | Last 24 hours, 7, 30, 90, or 365 days; seven days is the initial window. **Refresh current research** starts a new search and merges returned observations. |
-| REQUIRES_PROVIDER_CONFIGURATION | TikTok keyword discovery | Apify collects a bounded public-video search sample with source-reported counters. Searches request 3–100 items, use configured spending limits, and apply the exact requested posting-date cutoff. Requires `APIFY_API_TOKEN`; default Actor is `clockworks~tiktok-scraper`. Results may be fewer than requested. |
-| REQUIRES_PROVIDER_CONFIGURATION | YouTube discovery | YouTube Data API keyword search plus video details/statistics and available channel subscriber counts. Requires `YOUTUBE_API_KEY`. Its short-duration filter means under four minutes, not verified Shorts classification. |
-| IMPLEMENTED | Manual research import | Add links and known metadata, metrics, transcripts, on-screen text, or visual notes. Missing information remains unknown. Supports normalized provider-shaped JSON imports. |
-| IMPLEMENTED | Observed counters and provenance | Stores source, original publication time, collection/fetch times, and timestamped metric snapshots. Re-reading one Apify dataset does not invent a fresh collection observation. |
-| IMPLEMENTED | Cohort ranking and growth | Views, available engagement, average views/hour, available follower multiple, and growth between two distinct real observations. The cohort research signal is a relative heuristic. Average lifetime views/hour is separate from observed recent growth; unknown history gives unknown growth. Current engagement is `(likes + comments) / views` when both counts are known. |
-| NOT_IMPLEMENTED | Automatic daily background research | Refresh is user-triggered. There is no saved daily job, unattended search scheduler, or automatic account monitoring. |
-| NOT_IMPLEMENTED | Exhaustive worldwide viral census | No provider proves coverage of every public video or a globally complete ranking. The app reports the strongest videos found in its available sample. |
+| Dashboard plus persistent worker | Next.js dashboard with authenticated local Python job API, progress, cancellation, persistent SQLite jobs/history, and result import. | Local operation and automated checks are recorded in [VERIFICATION.md](VERIFICATION.md). Vercel hosts the dashboard; the worker runs separately. |
+| One-command Windows launch | After dependency/configuration setup, `Start-TikyToky.ps1` starts worker and dashboard at localhost:4199. Default is development mode; `-Production` requires a build and production password. | No installed background service or unattended scheduler. |
+| Isolated research runtime | Main Browser Use/media runtime and GPT Researcher/Crawl4AI runtime have separate virtual environments and locks. | Required by incompatible MCP dependency versions; not a single combined Python environment. |
+| Private pairing | Worker token, allowed-origin checks, bounded request bodies, and dashboard production sessions protect operations. | Production dashboard requires `APP_PASSWORD` of at least 16 characters. Worker pairing token is separate from provider credentials. |
+| Manual TikTok login | Dashboard button opens the dedicated persistent profile for human sign-in and closes it before research. | Browser Use, manual login, and the alternative Playwright MCP launcher share an exclusive profile lease. No competing controllers, CAPTCHA solving, or access-control bypass. |
 
-## Creative evidence and original scripts
+## Finding and ranking videos
 
-| Status | Feature | Delivered behavior and limits |
+| Feature | Delivered behavior | Verification and limits |
 | --- | --- | --- |
-| IMPLEMENTED | Comparison and pattern library | Select up to 20 videos per analysis. Structured hook, story, curiosity, visual presentation, CTA, attention-risk commentary, opportunities, confidence, and linked source IDs. Evidence is identified as metadata, transcript, supplied visuals, or a combination. |
-| IMPLEMENTED | Evidence limits | Titles/captions do not prove the spoken hook. Untimed transcripts do not prove exact timestamps. Sparse frames do not measure continuous motion or edit cadence. Analysis currently includes the first 2,000 transcript characters per source and discloses truncation. |
-| REQUIRES_PROVIDER_CONFIGURATION | Public URL transcription | Optional Supadata transcript retrieval with synchronous or queued results; requires `SUPADATA_API_KEY`. Its auto mode can incur generated-transcription charges. Pasting a transcript works without that service. |
-| REQUIRES_PROVIDER_CONFIGURATION | Automatic content study | **Study top 5 & analyze** enriches up to five selected examples: retrieves actual transcript when configured, downloads available TikTok/Apify footage, decodes up to 12 frames with actual video timestamps, and analyzes the acquired evidence. Missing/expired/blocked/oversized media and unfinished speech jobs are reported; sources with no creative evidence are excluded. Requires downloadable provider footage, AI configuration, and optional Supadata. Footage is capped at 35 MB and decoding at 45 seconds, with temporary-file cleanup. Native YouTube discovery does not supply footage URLs. |
-| REQUIRES_PROVIDER_CONFIGURATION | Local video frame inspection | Browser samples up to 12 frames, including the opening seconds, and sends those images to the configured AI service. Readable overlay text and visual notes are retained; frame image bytes are excluded from saved projects and exports. Requires an image-capable configured model. |
-| IMPLEMENTED | Own draft review | A separate draft workspace compares supplied transcript/visual evidence with up to 10 references. Produces prioritized edits, a revised opening, suggested cuts, a prepublish checklist, limitations, and a test hypothesis. New factual script content requires the knowledge-backed script workflow. |
-| REQUIRES_PROVIDER_CONFIGURATION | OpenRouter / DeepSeek 4.1 | Server-side OpenRouter integration for analysis, scripts, verification, coaching, and images. Default model identifier: `deepseek/deepseek-v4.1-flash`; configurable using `OPENROUTER_MODEL`. Requires `OPENROUTER_API_KEY`, provider availability, and credits. |
-| IMPLEMENTED | Creator study and delivery | Seven user-selected creator lenses: Alex Hormozi, MrBeast, Zach King, Nick Grigolia, Maren Altman, May Like the Month, and Moon Omens. Direct concise teaching, story/payoff, or reflective delivery; selected questions guide original mechanics without adding facts, copying a persona, inventing predictions, or claiming unmeasured success. Each card links a public reference and identifies evidence limits. |
-| IMPLEMENTED | Original script packages | Generate 1–5 scripts, 10–180 seconds each: original hook, timed spoken beats, scene/shot directions, on-screen copy, CTA, caption, hashtags, supporting reference mechanics, knowledge citations, and a practical test plan. Viral examples supply abstract mechanics; uploaded knowledge supplies factual content. |
-| IMPLEMENTED | Output checks | Validates response shape, known source IDs/patterns, timing, exact knowledge quotations, and excessive transcript phrase overlap. Invalid or unsupported results are rejected rather than saved as successful output. These checks and AI review are fallible. |
-| NOT_IMPLEMENTED | Acoustic measurements or actual retention curves | No waveform/BPM/pitch/vocal-emotion measurement, actual competitor watch-time curve, or calibrated second-by-second retention heatmap. Attention-risk text is a hypothesis, not audience measurement. |
-| NOT_IMPLEMENTED | Guaranteed virality or fame | No score, hook, model, video length, or posting slot guarantees performance. Sample patterns describe associations and testable ideas. |
+| Any niche | Freeform subject, optional creators/hashtags, audience, delivery, tone, brand, and offer. | Astrology/numerology are defaults or examples, not a restricted domain or preloaded factual doctrine. |
+| Primary Browser Use discovery | Actual Browser Use navigation investigates TikTok search, requested profiles/hashtags, and Creative Center, with bounded creator follow-up. Model-returned URLs must also have been observed in page evidence. | **Live limited:** the bounded actual TikTok smoke encountered an access restriction and returned zero videos. Manual login may help but does not guarantee access. |
+| Optional direct video URLs | Users can supply public URLs alongside or instead of open-ended discovery. | URLs are optional; supplied links can still be blocked or unavailable. |
+| Actual TikTok-Api enrichment | Uses the installed library's real session/request methods in a separate plain browser context, preserving provenance and existing evidence. | **Live limited:** actual public-detail request returned an empty response; no new counters were fabricated. No added stealth patches, proxies, replayed tokens, or challenge bypass. |
+| Bounded local research | Up to 30 candidates and five media studies per job; 1-, 7-, 30-, or 90-day period. Up to three requested creators and three hashtags. | Available results can be fewer. Unknown dates are not silently promoted to verified recent posts. |
+| Optional cloud alternatives | Apify TikTok discovery, YouTube Data API discovery, and Supadata transcripts remain available when configured. | Apify/Supadata/paid search are not mandatory for the local pipeline. OpenRouter AI still needs a funded key. Optional provider accounts have separate quotas and costs. |
+| Real counters and history | Stores source metadata, publication/fetch/collection times, and timestamped metric snapshots. Missing counters stay unknown; zero stays zero. | Re-reading a dataset does not create a new historical collection. No synthetic backfilled baseline. |
+| Sample ranking and growth | Relative cohort score, available engagement/follower context, lifetime average views/hour, and recent growth between distinct real observations. | No calibrated virality probability, exhaustive worldwide ranking, causal attribution, or automatic daily monitoring. |
 
-## Your specific knowledge as the factual source
+## Actual media and deeper research
 
-| Status | Feature | Delivered behavior and limits |
+| Feature | Delivered behavior | Verification and limits |
 | --- | --- | --- |
-| IMPLEMENTED | Knowledge library | Upload TXT, Markdown, JSON, searchable PDF, or DOCX; or paste a named note. Review extracted text and remove documents. No example knowledge or private material is preloaded. |
-| IMPLEMENTED | Safe, bounded extraction | One file per upload; 2.5 MB file / 3 MB request / 50,000 extracted characters. UTF-8 text and JSON structure preserved; PDF text and DOCX paragraphs extracted. Empty, malformed, oversized, encrypted/unreadable, or scanned PDFs without text are rejected. DOCX archive expansion, XML entities, nesting, and structure are bounded. |
-| IMPLEMENTED | Factual-source separation | Generation instructions restrict substantive factual claims to uploaded knowledge. Creator videos, briefs, and previous post notes are not factual sources. Every script requires document-ID quotations and an explanation of what they support. |
-| IMPLEMENTED | Citation and claim verifier | Checks that quotations occur in the supplied document, then performs a separate AI review of factual claims across the entire script. Unsupported or ambiguous claims cause rejection. This verifies consistency with supplied material; it does not independently establish that astrology, numerology, or other source claims are scientifically true. Human review remains necessary. |
-| IMPLEMENTED | Knowledge context limits | At least one knowledge document is required for generation; at most 20 documents and 100,000 combined characters per request. |
-| NOT_IMPLEMENTED | Scanned-page OCR or a full document search engine | Upload extraction does not perform document OCR, run a vector database, or silently supplement missing factual knowledge from the web. |
+| Public-media study | yt-dlp downloads available footage; FFmpeg obtains media facts and real timestamped frames; faster-whisper extracts speech locally. | Local media processing was checked. Successful end-to-end TikTok download/study was not established; public platform restrictions are reported. |
+| Timestamped local speech | Actual faster-whisper transcript with timed speech segments retained for review and evidence. | Actual local recorded-speech processing was exercised. Model weights download on first use; accuracy varies. No paid transcription service required. |
+| Own video upload | **Improve my video → Upload to local worker** accepts up to 50 MB and three minutes, extracts speech, and studies frames. | Requires a paired running worker. Temporary uploaded file is removed after processing. |
+| Browser-only inspection | Samples up to 12 frames, including the opening, for image-capable AI inspection. | Does not transcribe audio. Frame bytes are not saved into dashboard project exports. |
+| Separate image analysis | Direct OpenRouter frame calls produce available visual notes and readable overlay text. | Browser Use's installed DeepSeek adapter is DOM-only; frame vision uses a separate direct provider call. Sparse frames do not measure continuous edit cadence. |
+| GPT Researcher | Real GPT Researcher investigation runs in the separate research runtime. | A real public software-documentation smoke passed. This does not verify unrestricted TikTok investigation or every niche/source. |
+| Crawl4AI | Real public-page crawling supplies additional source evidence for research. | A real public software-documentation smoke passed. Pages can still block or fail. Third-party attribution is included. |
+| Optional SearXNG | Supports an operator-run search endpoint. | The optional local SearXNG service was not verified operational in this environment. No paid search provider is mandatory. |
+| Partial-result reporting | Blocked navigation, empty metadata, missing media, unavailable research services, and decoding/transcription failures are surfaced. | Missing evidence does not become a successful fake result. |
 
-## Posting experiments and real feedback
+## Analysis, knowledge, and original scripts
 
-| Status | Feature | Delivered behavior and limits |
+| Feature | Delivered behavior | Verification and limits |
 | --- | --- | --- |
-| IMPLEMENTED | Utah posting plan | Seven upcoming suggested windows in IANA `America/Denver`, with MDT/MST daylight-saving conversion. Without enough own data, times are explicitly experiments. Observational timing requires at least 12 unique posts with comparable 23–25 hour observations and two eligible posting hours containing at least three posts each. |
-| IMPLEMENTED | Duration recommendation | Uses measured lengths from the stronger reference sample when at least three usable examples exist; otherwise starts with an explicitly experimental 20–40 second range. The suggested duration can populate the creative brief. It is not a measured optimum. |
-| IMPLEMENTED | Own outcome log and feedback | Record published links, script names, actual publication times, metric snapshots, and notes. Supplied outcomes inform later script experiments and eligible timing comparisons; missing baselines are never backfilled as historical facts. This is saved observational feedback, not automatic model training. |
-| NOT_IMPLEMENTED | Automatic publishing or TikTok scheduling | Posting windows are a plan to follow manually. This version does not upload, publish, or schedule videos inside TikTok or another social account. |
+| Reference comparison | Up to 20 videos per analysis: opening, story, curiosity, CTA, visual presentation, opportunities, confidence, and cited source IDs. | Evidence level follows supplied metadata/transcript/visuals. Captions do not prove spoken hooks; untimed transcripts do not prove precise timing. Transcript context is bounded and truncation disclosed. |
+| Knowledge library | TXT, Markdown, JSON, searchable PDF, DOCX, and named pasted notes; extracted text is reviewable. | 2.5 MB/file, 50,000 characters/document, 20 documents, 100,000 combined characters. Scanned-page OCR and a vector search service are not included. |
+| Sole factual source | At least one nonempty knowledge document is required for generation. Viral examples supply mechanics, while uploaded knowledge supplies substantive claims. | Briefs, web research, creator references, and own outcome notes are not additional factual sources for generated scripts. |
+| Exact citations and independent claim review | Each script needs known document IDs and quotations present in the source. A second AI call checks factual support across hook, speech, overlays, caption, and CTA. | Invalid or unsupported claims fail closed. Model-based review remains fallible and does not prove the supplied material is externally/scientifically true. |
+| Original script packages | 1–5 variants, 10–180 seconds: hook, timed beats, scene directions, overlays, CTA, caption, hashtags, cited mechanics/knowledge, and test plan. | Shape, known source IDs, timing, exact quotations, and excessive source-transcript overlap are checked. No creator voice clone or guaranteed performance. |
+| Creator-study lenses | Alex Hormozi, MrBeast, Zach King, Nick Grigolia, Maren Altman, May Like the Month, and Moon Omens guide research questions and delivery choices. | Cards do not establish measured performance, conversion, or the cause of virality. |
+| Own-draft coaching | Separate draft compared with up to 10 benchmarks; prioritized edits/cuts, revised hook, strengths, checklist, hypothesis, and uncertainty. | Revised hook rephrases draft-backed claims. New factual script content belongs in the knowledge-grounded generation workflow. |
+| Stale-result protection | Changed project/knowledge/brief state prevents late AI results from replacing newer work; manual transcript edits are guarded. | Reviewed in [REVIEW.md](REVIEW.md). |
+| AI provider | Server-only OpenRouter; default `deepseek/deepseek-v4.1-flash`. | Live analysis, grounded script generation, and separate verification passed with explicit software-validation text. Model availability, credits, and input limits still apply. |
+| Attention and retention | Qualitative attention-risk hypotheses tied to available evidence. | No actual competitor retention curve, waveform/pitch/emotion measurement, calibrated retention heatmap, or guaranteed virality. |
 
-## Delivery, storage, privacy, and verification
+## Posting experiments and feedback
 
-| Status | Feature | Delivered behavior and limits |
+| Feature | Delivered behavior | Verification and limits |
 | --- | --- | --- |
-| IMPLEMENTED | Browser workspace and exports | Multiple locally saved projects; JSON backup/restore; Markdown script download and copy. Restore validates saved data and creates a separate project. Browser storage can fill or be cleared; it does not sync across devices. |
-| IMPLEMENTED | Authentication and secret handling | Production requires a server password of at least 16 characters, signed expiring sessions, origin checks, validated bodies, and server-only provider credentials. No provider secrets are entered in the browser setup UI. |
-| IMPLEMENTED | Privacy and costs | Knowledge extraction temporarily processes files on this server without file persistence. Automatic visual study temporarily downloads provider footage and deletes its decoding directory afterward. Selected knowledge/text and sampled images are sent to the configured AI provider for requested operations. Project backups include knowledge text. TikTok's default total provider cap is $1 per new run, configurable on the server; optional services have their own billing/quota. |
-| IMPLEMENTED | Capability status | Setup reports which server credential settings are present. A “Connected” configuration indicator alone is not proof of a working, funded provider request. |
-| IMPLEMENTED | Vercel-ready source and GitHub target | Next.js application, build scripts, environment template, and `vercel.json`; Git origin points to [olsonan26/TIKYTOKY-analyzer](https://github.com/olsonan26/TIKYTOKY-analyzer). Publication and deployment URLs must be verified separately at delivery. |
-| NOT_IMPLEMENTED | Production deployment certification | Source/build readiness does not establish a deployed Vercel service, funded discovery accounts, or a successful end-to-end production workflow. |
+| Utah posting plan | Seven upcoming suggested windows in `America/Denver` with MDT/MST conversion. | Explicit experiments until enough comparable own-post observations exist. No scientifically established universal best time. |
+| Observational timing | Requires at least 12 unique own posts with comparable 23–25 hour observations, with at least three posts in each of two eligible posting hours. | Descriptive associations; not controlled causal proof or promised lift. Actual Utah publication date/time is recorded and nonexistent DST times are rejected. |
+| Duration suggestion | Uses stronger references when at least three usable measured lengths exist; otherwise an experimental 20–40 second starting range. | Not an optimal-duration guarantee. |
+| Own outcomes | Actual links, script names, publication times, counters, repeated observations, and notes. Latest 20 outcomes can inform later script experiments. | No fabricated improvement rates, backfilled history, or automatic model training. |
+| Publishing | Script and posting plan are ready for manual use. | Automatic social publishing, TikTok scheduling, and unattended daily research are not implemented. |
 
-Local verification includes automated provider-contract tests using mocked HTTP, ranking/history tests, AI guardrail tests, Utah daylight-saving tests, authentication tests, and real generated PDF/DOCX extraction tests. These checks do not certify live TikTok scraping, YouTube data access, Supadata availability, or real OpenRouter generation. Record successful live checks separately with their date and scope.
+## Storage, delivery, and live status
 
-The static reviews of the five upstream repositories are preserved in [docs/research](research/); upstream databases, temporary media, and full third-party repositories are excluded from this deliverable.
+| Feature | Delivered behavior | Verification and limits |
+| --- | --- | --- |
+| Projects and exports | Browser-local projects, knowledge, JSON backup/restore, and Markdown script export; worker jobs/history stored locally. | No cross-device/cloud project sync. Backups contain uploaded knowledge. |
+| Credentials and privacy | Provider keys remain server/worker-side. Worker profile/cookies/data and local secrets are ignored by Git. Local uploads are temporary. | Selected text, knowledge, and sampled images go to the configured AI provider on request. Local processing does not mean every stage is offline or free. |
+| Optional provider budget | Apify collection has a configurable default $1 cap per collection run. | Applies only to that optional provider operation; not a global OpenRouter/research/transcription budget. |
+| Vercel-ready dashboard | Build configuration, environment examples, authentication, and bounded dashboard routes are present. | Persistent worker runs separately. Hosted dashboard access to a local worker needs exact allowed origin and possible browser local-network permission. Other devices need an operator-provided secure worker endpoint. |
+| GitHub source | Target repository is [olsonan26/TIKYTOKY-analyzer](https://github.com/olsonan26/TIKYTOKY-analyzer). | Commit/push status must be checked at delivery. Source readiness is not production deployment certification. |
+| Real TikTok end-to-end result | Actual browser and library probes are preserved as evidence. | Browser search returned zero videos due to access restrictions; secondary API returned empty. No successful public TikTok discovery → media → grounded script flow or production deployment is claimed. |
+
+See [VERIFICATION.md](VERIFICATION.md) for dated checks, [REVIEW.md](REVIEW.md) for bounded integration review, [browser source audit](research/open-source-browser-stack.md), [media source audit](research/open-source-media-stack.md), [research source audit](research/open-source-research-stack.md), and [third-party notices](THIRD_PARTY.md). Automated provider mocks, local fixture tests, actual software-documentation research, and real platform results are distinct evidence categories.

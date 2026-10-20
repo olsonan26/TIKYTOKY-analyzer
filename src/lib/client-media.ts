@@ -17,7 +17,7 @@ export function parseSavedProject(value: unknown): Project {
 }
 
 export function parseSavedBrief(value: unknown): Brief {
-  const result = z.object({ subject: text.max(300), audience: text.max(1000), brand: text.max(300), offer: text.max(2000), tone: text.max(300), duration: z.number().int().min(10).max(180), cta: text.max(500), count: z.number().int().min(1).max(5) }).safeParse(value);
+  const result = z.object({ subject: text.max(300), audience: text.max(1000), brand: text.max(300), offer: text.max(2000), tone: text.max(300), duration: z.number().int().min(10).max(180), cta: text.max(500), count: z.number().int().min(1).max(5), deliveryStyle: z.enum(["direct-teaching","story-led","reflective"]).optional(), studyCreators: z.array(z.enum(["alex-hormozi","mrbeast","zach-king","nick-grigolia","maren-altman","may-like-the-month","moon-omens"])).max(7).optional() }).safeParse(value);
   if (!result.success) throw new Error("The saved creative brief is invalid. Your existing workspace was left unchanged.");
   return result.data;
 }

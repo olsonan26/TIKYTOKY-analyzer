@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-10-20T07:10:25.311943Z",
+  "urlSource": "Pinned TikTok-Api video.info documentation example",
+  "modelCalls": 0,
+  "result": {
+    "videos": [
+      {
+        "id": "7106686413101468970",
+        "url": "https://www.tiktok.com/@davidteathercodes/video/7106686413101468970",
+        "snapshots": []
+      }
+    ],
+    "warnings": [
+      "TikTok-Api could not complete enrichment (dependency, profile lock, login, challenge or denied response). Existing evidence was kept. Resolve access manually; no bypass or retry was attempted."
+    ],
+    "blocked": true,
+    "failureType": "EmptyResponseException",
+    "failureStage": "public item metadata request"
+  }
+}

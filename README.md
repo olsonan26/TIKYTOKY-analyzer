@@ -1,74 +1,92 @@
 # TIKY TOKY Analyzer
 
-A video research and creation studio for any niche. Start with astrology or numerology, find current high performers, compare your own draft, and write original scripts from **your knowledge** using observed presentation patterns.
+A video research and creation studio for **any niche**. Find promising public videos, study the available evidence, improve your own draft, and write original scripts grounded in **your uploaded knowledge**.
 
-This is an original integration informed by five source audits. It does not merge their incomplete applications or copy their unlicensed implementation code. See the [feature checklist](docs/FEATURE_CHECKLIST.md) and [upstream findings](docs/research/).
+The primary pipeline combines a Next.js dashboard with a persistent local Python worker: Browser Use, TikTok-Api, yt-dlp, FFmpeg, faster-whisper, GPT Researcher, and Crawl4AI. SearXNG is optional. Apify and Supadata are optional cloud alternatives; neither is required by the local pipeline. OpenRouter powers the AI operations and requires a funded key.
 
-**Open-source research is the primary pipeline.** Run the integrated [Python worker](worker/README.md) alongside the Vercel dashboard for Browser Use navigation, TikTok-Api metadata, local faster-whisper transcription, yt-dlp/FFmpeg media processing, and GPT Researcher/Crawl4AI/SearXNG investigation. Apify and Supadata are optional cloud fallbacks. See [verification status](docs/VERIFICATION.md) for tested behavior and remaining live-access limits.
+See the [feature checklist](docs/FEATURE_CHECKLIST.md), [verification record](docs/VERIFICATION.md), [worker guide](worker/README.md), and [source audits](docs/research/). This is an original integration; it does not merge the incomplete upstream applications or copy their unlicensed code.
 
-## Run locally
+## Start on Windows
 
-Use Node.js 22 or newer.
+Prerequisites: Node.js 22+, Python 3.12, [uv](https://docs.astral.sh/uv/getting-started/installation/), and FFmpeg/ffprobe available on PATH. Setup downloads Python dependencies and Chromium; the first transcription also downloads the selected Whisper model.
+
+From the repository root:
 
 ```powershell
 npm ci
 Copy-Item .env.example .env.local
-# Fill the server-side settings in .env.local.
-npm run dev
+# Set OPENROUTER_API_KEY in .env.local.
+.\worker\setup.ps1
+.\Start-TikyToky.ps1
 ```
 
-Open [localhost:3000](http://localhost:3000). No seeded research, fake views, example knowledge or synthetic retention curves are loaded.
+If `.env.local` already exists, edit it instead of replacing it. Keep credentials out of Git.
 
-## Deploy to Vercel
+The launcher starts the worker on `127.0.0.1:8765` and the dashboard at [localhost:4199](http://localhost:4199). It opens the dashboard and prints the worker pairing-file location. In **Autonomous research**, pair this browser using that local worker token. The token authorizes access to your worker; it is separate from your OpenRouter key.
 
-Import [olsonan26/TIKYTOKY-analyzer](https://github.com/olsonan26/TIKYTOKY-analyzer) into Vercel. Choose **Next.js**, repository root, Node.js 22 or newer, install command `npm ci` and build command `npm run build`. `vercel.json` supplies the framework and commands.
+Use `.\Start-TikyToky.ps1 -NoBrowser` to leave the browser closed. The launcher uses development mode by default. For a production-mode local dashboard, configure an `APP_PASSWORD` of at least 16 characters, run `npm run build`, then launch with `-Production`. Neither mode installs a background service.
 
-Set these **server-side environment variables** before deployment:
+For WSL2 setup, individual process commands, optional SearXNG, or troubleshooting, use the [worker guide](worker/README.md). Windows and WSL2 need their own virtual environments.
 
-| Variable | Purpose |
+## Use the complete workflow
+
+1. **Add your knowledge.** Upload TXT, Markdown, JSON, searchable PDF, or DOCX, or paste a named note. Review the extracted text. Limits: 2.5 MB per file, 50,000 characters per document, 20 documents, and 100,000 total characters. Scanned PDFs need text supplied separately.
+2. **Prepare TikTok access.** Use **Open TikTok login** in Autonomous research when needed, sign in manually, then finish the login session before starting research. Browser Use, manual login, and the alternative Playwright MCP launcher share one exclusive persistent profile. No CAPTCHA solving or access-control bypass is included.
+3. **Research your niche.** Enter any subject. Optional creator handles, hashtags, and direct video URLs narrow the search; you do not have to paste URLs. Browser Use investigates search, requested profiles/hashtags, and Creative Center. The local workflow collects up to 30 candidates and can study up to five videos per job. Its period choices are 1, 7, 30, or 90 days. Unknown dates and unavailable information remain explicit.
+4. **Study actual evidence.** TikTok-Api attempts secondary metadata enrichment. Available public media is processed by yt-dlp, FFmpeg, and local faster-whisper; timestamped speech segments and real sampled frames supply creative evidence. GPT Researcher and Crawl4AI provide additional public-web investigation. Blocked pages, failed downloads, and unavailable dependencies produce partial results or errors.
+5. **Compare patterns.** Review the collected sample and analyze up to 20 references. Reports cover the opening, story, curiosity, CTA, available visuals, and limitations. Metadata alone cannot establish spoken wording or editing technique. Seven creator-study lenses help frame questions; they do not claim measured success or clone a creator's voice.
+6. **Create original scripts.** Choose the audience, tone, delivery, duration, and 1–5 variants. Brand, offer, and CTA preferences are optional. References supply presentation mechanics; your knowledge supplies substantive facts. Output includes timed spoken beats, shots, overlays, captions, citations, and a test plan. Exact quotation checks and a separate AI claim review reject invalid or unsupported output.
+7. **Improve your own video.** In **Improve my video**, use **Upload to local worker** for a video up to 50 MB and three minutes. It extracts speech locally, preserves timestamped segments, and inspects sampled frames. The browser-only frame-inspection option samples up to 12 images and does not transcribe audio. Review the evidence, then compare the draft with up to 10 selected benchmarks for prioritized edits, a revised opening, and a prepublish checklist.
+8. **Test and learn.** Follow seven suggested posting windows in `America/Denver` and an evidence-based or explicitly experimental duration range. Enter the actual Utah publication date/time and observed counters for your own posts. Repeated observations append real history; the latest 20 outcomes can guide later script experiments. This is observational feedback, not automatic model training.
+
+Worker jobs and collected evidence persist locally. Completed research can be imported into dashboard projects. Projects, knowledge, and script packages live in this browser; export JSON for backup or Markdown for scripts. There is no cross-device project sync, unattended daily scheduler, or automatic TikTok publishing.
+
+## What has actually been verified
+
+The [verification record](docs/VERIFICATION.md) distinguishes automated tests, local processing, live provider checks, and remaining limits.
+
+- Live OpenRouter analysis and knowledge-grounded script generation, including the separate claim verifier, were exercised with explicit software-validation material.
+- Local speech transcription and frame processing were exercised. GPT Researcher and Crawl4AI were exercised against public software documentation.
+- The bounded live Browser Use TikTok search launched the real browser, encountered an access restriction, and returned **zero videos**. The actual TikTok-Api public-detail request returned an empty response and supplied **no new metrics**. See [Browser Use evidence](docs/research/browser-public-smoke.json) and [TikTok-Api evidence](docs/research/tiktok-api-public-smoke.json).
+- End-to-end public TikTok discovery, download, transcription, and script creation has therefore **not** been verified as a successful live workflow. Access may require manual login and can remain unavailable. The optional local SearXNG service was not verified operational in this environment.
+- No production Vercel deployment, exhaustive viral-video search, guaranteed reach, or automatic publishing is claimed.
+
+## Configure the dashboard and worker
+
+The worker reuses the root `.env.local` OpenRouter settings and has its own template at [worker/.env.example](worker/.env.example). The two Python runtimes have separate locked dependencies because Browser Use and GPT Researcher require incompatible MCP versions.
+
+| Setting | Purpose |
 | --- | --- |
-| `OPENROUTER_API_KEY` | Your OpenRouter credential. Never use `NEXT_PUBLIC_` for a secret. |
-| `OPENROUTER_MODEL` | Default: `deepseek/deepseek-v4.1-flash`, with text/image input. |
-| `APP_PASSWORD` | Required in production; at least 16 characters. Protects provider access with a signed, expiring browser session. |
-| `APIFY_API_TOKEN` | Optional cloud TikTok discovery fallback; not needed by the local worker. |
-| `APIFY_TIKTOK_ACTOR` | Optional; defaults to `clockworks~tiktok-scraper`. |
-| `APIFY_DOWNLOAD_VIDEOS` | Defaults to `true`; request provider-hosted footage for automatic visual study. Set `false` for metadata-only collection. Downloads consume provider budget. |
-| `APIFY_MAX_CHARGE_USD` | Optional; default total provider cap is $1 for each new TikTok collection run. |
-| `YOUTUBE_API_KEY` | Optional alternative discovery provider. |
-| `SUPADATA_API_KEY` | Optional transcript retrieval from supported public video links. |
+| `OPENROUTER_API_KEY` | Server/worker AI credential. Never use `NEXT_PUBLIC_` for a secret. |
+| `OPENROUTER_MODEL` | Default: `deepseek/deepseek-v4.1-flash`. AI operations need provider availability and credits. |
+| `APP_PASSWORD` | Required for a production dashboard; at least 16 characters. |
+| `WORKER_ALLOWED_ORIGINS` | Exact dashboard origins allowed to use the local worker. Defaults cover local development. |
+| `WORKER_TOKEN` | Optional worker token override; otherwise the worker creates a private local pairing token. |
+| `WHISPER_MODEL` | Local speech model; default `base` with CPU/int8 settings. |
+| `SEARXNG_URL` | Optional operator-run search service for additional web research. |
+| `APIFY_API_TOKEN` | Optional cloud TikTok collection alternative. Its configurable default charge cap is $1 per collection run; this cap does not cover other providers. |
+| `YOUTUBE_API_KEY` | Optional YouTube Data API discovery. |
+| `SUPADATA_API_KEY` | Optional cloud transcript retrieval. |
 
-Deploy, open the URL, sign in, and check **Connections & setup**. “Configured” means a setting exists; test an operation to confirm credits, permissions and service availability. Changing variables requires redeployment. Production paid routes refuse requests until a valid password is configured. Provider keys are excluded from the repository and browser bundle.
+Browser Use's installed DeepSeek adapter uses DOM evidence rather than browser screenshots. Separate direct OpenRouter image calls handle video frames. Configuration indicators report settings or installed software; only a successful operation confirms a working provider.
 
-The dashboard runs on Vercel; long-running open-source browsing, transcription and research run in the separate persistent Windows/WSL2 worker. The optional cloud study route bundles `ffmpeg-static`, bounds temporary storage, and deletes decoding files. Local uploads are sampled in the browser. Cloud study fetches supported provider footage (35 MB limit), decodes up to 12 actual timestamped frames (45-second decode limit), and sends images to AI. Missing, denied, oversized or expired media is reported. Vercel function durations require a compatible Fluid Compute plan; request bodies stay below the documented function payload limit.
+## Use Vercel with the local worker
 
-The schedule is a posting plan to follow manually; this version does not publish to TikTok. Automatic unattended daily research is not included. Use **Refresh current research** for a new collection. Current plan/source references: [Vercel function limits](https://vercel.com/docs/functions/limitations), [Next.js on Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs).
+Import [olsonan26/TIKYTOKY-analyzer](https://github.com/olsonan26/TIKYTOKY-analyzer) into Vercel as a Next.js project, repository root, Node.js 22+, `npm ci`, and `npm run build`. Set `OPENROUTER_API_KEY`, the optional model override, and `APP_PASSWORD` as server-side environment variables.
 
-## The complete workflow
+Vercel hosts the dashboard and its bounded API routes. Browser automation, persistent profiles, local transcription, and long-running research run in the separate Windows/WSL2 worker. Add the exact deployed dashboard origin to `WORKER_ALLOWED_ORIGINS`, restart the worker, and pair from the dashboard on the same computer. The browser may require local-network permission. Access from another device needs an operator-configured secure HTTPS worker endpoint; deploying the dashboard does not provide that endpoint.
 
-1. **Video research:** enter any niche, choose TikTok/YouTube and a 24-hour, 7-, 30-, 90- or 365-day window. Collect up to 100 results per query. Without a discovery credential, import public links, actual counters and transcripts. Refresh to merge new authentic observations.
-2. **Evidence:** review each source. Fetch or paste its transcript; upload a local copy to inspect up to 12 frames, including 0–3 seconds. Metadata alone cannot establish a spoken hook or visual technique.
-3. **Automatic content study:** use **Study top 5 & analyze** on selected results. It retrieves speech through Supadata when configured, downloads available TikTok/Apify footage, decodes real timestamped frames, and analyzes the enriched evidence. It processes at most five sources per action and reports retrieval failures; examples with no creative evidence are excluded. Native YouTube discovery does not supply downloadable footage, so those examples use transcript evidence or a local copy.
-4. **Pattern library:** select up to 20 examples and analyze the opening, structure, curiosity, CTA and available visual evidence. Every report identifies source IDs and evidence limits.
-5. **Your knowledge:** add TXT, Markdown, JSON, searchable PDF or DOCX, or paste a named note. Review extracted text. Limit: 2.5 MB per file, 50,000 characters per document, 20 documents and 100,000 total characters. Scanned PDFs need text/OCR supplied separately.
-6. **Creator study:** choose general study lenses from Alex Hormozi, MrBeast, Zach King, Nick Grigolia, Maren Altman, May Like the Month and Moon Omens. Direct, concise teaching is the starting delivery; other lenses include visual reveals, curiosity/payoff, reflection and recurring series. These are research questions, not fabricated performance findings or a creator voice clone.
-7. **Script studio:** choose audience, delivery, tone, duration and 1–5 variants. An offer/brand/CTA is optional. Viral examples supply mechanics; uploaded knowledge supplies substantive claims. Scripts include timed speech, overlays, scene directions, captions, hashtags, citations and a test plan. Exact quote checks and a separate AI claim review reject invalid or unsupported output.
-8. **Improve my video:** keep your own draft separate. Supply the transcript or sampled visuals, then compare it against up to 10 selected benchmarks for prioritized edits, a revised opening and a prepublish checklist.
-9. **Posting plan:** get seven windows in `America/Denver`, including Utah daylight-saving changes, and a sample-based length to test. Without adequate own data, timing and the initial duration are explicitly experiments.
-10. **Your results:** enter the actual Utah publication date/time and observed counters. Repeated observations append history. Timing learns descriptive associations only after enough comparable 23–25 hour snapshots; the latest 20 own outcomes provide later script-generation context.
+Optional cloud discovery/study routes can operate without the worker when their providers are configured. Their account quotas, media availability, Vercel function limits, and billing still apply. Cloud video study bounds download size and decode time and removes temporary decoding files. See [Vercel function limits](https://vercel.com/docs/functions/limitations) and the [worker guide](worker/README.md). A successful build is not evidence of a successful production deployment.
 
-Projects and knowledge text are saved in this browser's local storage. Export a JSON backup for portability; script packages export to Markdown. There is no cross-device/cloud project sync. Backups contain your knowledge and should be handled accordingly. Raw locally uploaded video is not sent to this server; automatic visual study downloads available provider footage to temporary server storage; sampled images go to the configured AI provider on request. Knowledge file extraction is temporary server processing; selected extracted text goes to OpenRouter for generation and verification.
+## Evidence, privacy, and costs
 
-## What “no fabrication” means here
+Missing counters remain `null`; literal zero stays zero. Recent growth requires two distinct real observations. A relative research score describes this sample, not a calibrated probability of virality. The app does not invent competitor retention curves, watch time, acoustic emotion, or completion rates.
 
-- Missing counters are `null`; literal zero remains zero. No old baseline is backfilled from today's counters.
-- Recent growth requires two distinct actual observations. Lifetime average views/hour is labeled separately.
-- The research score ranks this sample; it is not a calibrated virality probability.
-- No actual competitor viewer-retention, acoustic emotion, waveform or completion data is invented.
-- Creator focus cards are explicitly study lenses. A public profile and an offer do not prove why content went viral or how well it converted.
-- All generated factual claims must be supported by the supplied knowledge; citations must quote a known document. The second AI pass fails closed on unsupported claims. These checks remain fallible: review the script and quotations before publishing. A citation verifies consistency with supplied material, not external or scientific truth.
-- Invalid provider output is an error, never a successful fake result. Claims about “all most viral videos” and guaranteed fame/views are unsupported.
+Uploaded knowledge is the sole factual source for new scripts. Exact quotations establish that cited text is present, and a second AI pass checks support across the script. These fallible checks do not prove external or scientific truth; review the final claims and quotations before publishing. Reference videos, web research, briefs, and previous performance notes are not permission to add unsupported facts.
 
-Your audience, niche, creative execution and platform distribution affect results. Neither a posting window nor a script guarantees virality.
+Browser projects and backups contain your knowledge. The worker stores job/history data and persistent browser cookies under its ignored local data directory. Draft uploads sent to the local worker are temporary and removed after processing. Browser-only inspection sends sampled images rather than the raw video to the dashboard. Selected text, knowledge, and frame images are sent to the configured AI provider for requested operations. Local speech recognition does not require a paid transcription service; AI calls and optional cloud services have their own costs.
+
+No model, script, posting window, or feature guarantees virality.
 
 ## Verify changes
 
@@ -76,8 +94,11 @@ Your audience, niche, creative execution and platform distribution affect result
 npm test
 npm run typecheck
 npm run build
+Push-Location worker
+.\.venv\Scripts\python.exe -m unittest discover -s tests
+Pop-Location
 ```
 
-`npm run smoke:ai` is an **opt-in, billable** live OpenRouter check using explicit local software-validation text, with no fabricated market performance. It reads `.env.local`, never prints the key, and checks research → grounded script → independent verification. Automated tests mock provider calls; they do not prove live TikTok scraping. See [verification evidence](docs/VERIFICATION.md) for completed checks and limits.
+`npm run smoke:ai` is an opt-in, billable OpenRouter check. The worker public-browser smoke is also opt-in and may incur AI usage. Ordinary automated tests mock external providers where appropriate and do not certify live TikTok access. Consult the [verification record](docs/VERIFICATION.md) for dated results and scope.
 
-Provider contracts and current official documentation: [OpenRouter structured outputs](https://openrouter.ai/docs/features/structured-outputs), [Apify TikTok scraper](https://apify.com/clockworks/tiktok-scraper), [YouTube search](https://developers.google.com/youtube/v3/docs/search/list), [Supadata transcript API](https://docs.supadata.ai/getting-started).
+This product includes software developed by UncleCode (https://x.com/unclecode) as part of the Crawl4AI project (https://github.com/unclecode/crawl4ai). See [third-party notices](docs/THIRD_PARTY.md) and the pinned [browser](docs/research/open-source-browser-stack.md), [media](docs/research/open-source-media-stack.md), and [research](docs/research/open-source-research-stack.md) audits.

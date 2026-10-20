@@ -21,7 +21,7 @@ class JobStore:
             self.db.execute("CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, status TEXT NOT NULL, request TEXT NOT NULL, result TEXT, error TEXT, events TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)")
             self.db.execute("CREATE TABLE IF NOT EXISTS observations (url TEXT NOT NULL, observed_at TEXT NOT NULL, snapshot TEXT NOT NULL, PRIMARY KEY(url, observed_at))")
             # A crash cannot leave a job falsely shown as still running forever.
-            self.db.execute("UPDATE jobs SET status='interrupted', error='Worker restarted during this job; review partial events and start a fresh run.' WHERE status='running'")
+            self.db.execute("UPDATE jobs SET status='interrupted', error='Worker restarted during this job; review partial events and start a fresh run.' WHERE status IN ('running','cancel_requested')")
 
     def create(self, request: dict[str, Any]) -> dict[str, Any]:
         identifier = str(uuid.uuid4())

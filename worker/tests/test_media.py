@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -133,9 +134,56 @@ def test_no_audio_is_unknown_speech_not_invented_transcript(tmp_path):
 
 
 def test_transcription_failure_can_keep_genuine_visual_evidence_with_explicit_warning(tmp_path):
-    video = {"duration": 12}
+    video = {"duration": 12, "url": PUBLIC_URL}
     with patch.object(media, "download_public_video", return_value={"path": tmp_path / "media.mp4", "metadata": video}), patch.object(media, "probe_media", return_value={"duration": 12}), patch.object(media, "extract_frames", return_value=[{"seconds": 0, "image": "data:image/jpeg;base64,actual"}]), patch.object(media, "transcribe_media", side_effect=media.MediaError("dependency_missing", "Whisper is not installed.")):
         result = media.inspect_public_video(PUBLIC_URL, work_root=tmp_path)
     assert result["frames"] and result["warnings"] == ["Whisper is not installed."]
     assert result["transcript"] == "" and result["transcriptSegments"] == []
     assert result["transcriptSource"].startswith("Unavailable")
+
+
+def test_local_upload_preserves_original_file_and_segment_evidence_without_public_metrics(tmp_path):
+    original = tmp_path / "my-own-draft.mp4"
+    original.write_bytes(b"authorized user upload")
+    work = tmp_path / "jobs"
+    segments = [{"start": 0.27, "end": 2.83, "text": "My recorded draft."}]
+    asr = {"transcript": "My recorded draft.", "transcriptSegments": segments, "language": "en", "transcriptSource": "faster-whisper/tiny (cpu/int8)"}
+    with patch.object(media, "probe_media", return_value={"duration": 4, "hasAudio": True}), patch.object(media, "extract_frames", return_value=[{"seconds": 0, "image": "data:image/jpeg;base64,frame"}]), patch.object(media, "transcribe_media", return_value=asr):
+        result = media.inspect_local_video(original, work_root=work, model_size="tiny")
+    assert original.read_bytes() == b"authorized user upload"
+    assert not list(work.glob("local-media-*")), "only newly created processing artifacts are removed"
+    assert result["video"]["url"] == "" and result["video"]["platform"] == "other"
+    assert result["video"]["publishedAt"] is None and result["video"]["snapshots"] == []
+    assert result["video"]["creator"] == "You" and result["video"]["source"] == "Local user upload"
+    assert result["video"]["transcriptSegments"] == segments
+    assert result["video"]["transcript"] == "My recorded draft."
+
+
+def test_public_result_keeps_segment_timing_in_video(tmp_path):
+    segments = [{"start": 0.3, "end": 1.6, "text": "Spoken evidence."}]
+    with patch.object(media, "download_public_video", return_value={"path": tmp_path / "video.mp4", "metadata": {"url": PUBLIC_URL}}), patch.object(media, "probe_media", return_value={"duration": 2}), patch.object(media, "extract_frames", return_value=[]), patch.object(media, "transcribe_media", return_value={"transcript": "Spoken evidence.", "transcriptSegments": segments, "transcriptSource": "Local ASR"}):
+        result = media.inspect_public_video(PUBLIC_URL, work_root=tmp_path)
+    assert result["video"]["transcriptSegments"] == segments
+
+
+def test_asr_subprocess_uses_local_caches_instead_of_inherited_external_drive(tmp_path):
+    path = tmp_path / "video.mp4"
+    path.write_bytes(b"fixture")
+    cache = tmp_path / "models"
+
+    def run(command, root, timeout, **kwargs):
+        if "--asr" in command:
+            environment = kwargs["environment"]
+            assert environment["HF_HOME"] == str(cache / ".hf")
+            assert environment["HF_XET_CACHE"] == str(cache / ".xet")
+            assert environment["HF_HUB_CACHE"] == str(cache)
+            assert environment["HF_HUB_DISABLE_IMPLICIT_TOKEN"] == "1"
+            Path(command[4]).write_text(json.dumps({"transcript": "Real speech", "transcriptSegments": [{"start": 0, "end": 1, "text": "Real speech"}]}))
+        else:
+            Path(command[-1]).write_bytes(b"decoded audio")
+        return "", "", 0
+
+    with patch.dict(os.environ, {"HF_HOME": "Z:/unavailable-cache"}), patch.object(media, "probe_media", return_value={"duration": 2, "hasAudio": True}), patch.object(media.importlib.util, "find_spec", return_value=object()), patch.object(media, "_run", side_effect=run):
+        result = media.transcribe_media(path, model_cache=cache)
+        assert os.environ["HF_HOME"] == "Z:/unavailable-cache", "parent process environment is not mutated"
+    assert result["transcript"] == "Real speech"

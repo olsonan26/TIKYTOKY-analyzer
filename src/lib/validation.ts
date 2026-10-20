@@ -20,6 +20,8 @@ export const videoSchema = z.object({
   followers: z.number().finite().nonnegative().nullable(),
   thumbnail: z.string().max(4096).optional(), mediaUrl: z.string().max(4096).optional(),
   transcript: z.string().max(40000).optional(), transcriptSource: z.string().max(200).optional(),
+  transcriptSegments: z.array(z.object({start: z.number().finite().min(0).max(600), end: z.number().finite().min(0).max(600), text: z.string().max(4000)}).refine(s => s.end >= s.start)).max(2000).optional(),
+  description: z.string().max(10000).optional(), hashtags: z.array(z.string().max(200)).max(100).optional(),
   onScreenText: z.string().max(10000).optional(), visualNotes: z.string().max(10000).optional(),
   frames: z.array(frameSchema).max(12).optional(),
   snapshots: z.array(snapshotSchema).max(100), source: z.string().max(200), fetchedAt: z.iso.datetime()
