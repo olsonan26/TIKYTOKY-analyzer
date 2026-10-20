@@ -169,6 +169,9 @@ async def enrich_videos(videos: list[dict[str, Any]], emit: Callable[[str], None
                             warnings.append("TikTok-Api returned no usable item metadata; existing observations were preserved.")
                             break
                         observed = normalize_tiktok(raw, source="TikTok-Api public item detail (separate owned session)", fallback_url=url)
+                        if observed and observed["url"] != url:
+                            warnings.append("TikTok-Api returned a different video than requested; no mismatched metadata was accepted.")
+                            break
                         if observed:
                             existing = video.get("snapshots") if isinstance(video.get("snapshots"), list) else []
                             updated[index] = {**video, **observed, "id": video.get("id") or observed["id"], "snapshots": existing + observed["snapshots"]}
@@ -177,6 +180,9 @@ async def enrich_videos(videos: list[dict[str, Any]], emit: Callable[[str], None
         return {"videos": updated, "warnings": warnings, "blocked": True}
     except Exception as error:
         # Upstream errors may contain cookies or response bodies; do not persist them.
-        warnings.append("TikTok-Api could not complete enrichment (dependency, profile lock, login, challenge or denied response). Existing evidence was kept. Resolve access manually; no bypass or retry was attempted.")
+        if type(error).__name__ == "EmptyResponseException":
+            warnings.append("TikTok-Api returned an empty public metadata response. Existing browser observations were preserved. Secondary API access is unavailable in this session; no bypass or retry was attempted.")
+        else:
+            warnings.append("TikTok-Api could not complete enrichment (dependency, profile lock, login, challenge or denied response). Existing evidence was kept. Resolve access manually; no bypass or retry was attempted.")
         return {"videos": updated, "warnings": warnings, "blocked": True, "failureType": type(error).__name__, "failureStage": stage}
     return {"videos": updated, "warnings": warnings, "blocked": False}

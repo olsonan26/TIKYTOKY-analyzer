@@ -47,9 +47,9 @@ The [verification record](docs/VERIFICATION.md) distinguishes automated tests, l
 
 - Live OpenRouter analysis and knowledge-grounded script generation, including the separate claim verifier, were exercised with explicit software-validation material.
 - Local speech transcription and frame processing were exercised. GPT Researcher and Crawl4AI were exercised against public software documentation.
-- The bounded live Browser Use TikTok search launched the real browser, encountered an access restriction, and returned **zero videos**. The actual TikTok-Api public-detail request returned an empty response and supplied **no new metrics**. See [Browser Use evidence](docs/research/browser-public-smoke.json) and [TikTok-Api evidence](docs/research/tiktok-api-public-smoke.json).
-- End-to-end public TikTok discovery, download, transcription, and script creation has therefore **not** been verified as a successful live workflow. Access may require manual login and can remain unavailable. The optional local SearXNG service was not verified operational in this environment.
-- No production Vercel deployment, exhaustive viral-video search, guaranteed reach, or automatic publishing is claimed.
+- A later real Browser Use retry collected **two dated astrology videos with observed counters**, including 418,300 reported views on one source. A real queued numerology run also collected one dated source with 5,793 reported views. The secondary TikTok-Api request still returned an empty response and supplied **no new metrics**. See [Browser Use evidence](docs/research/browser-public-smoke.json) and [TikTok-Api evidence](docs/research/tiktok-api-public-smoke.json).
+- Public TikTok **discovery and metrics succeeded**, but the tested media downloads remained unavailable and observed playback URLs returned HTTP 403. A successful public TikTok discovery → media download → transcription → script flow is therefore **not** claimed. Uploaded local video transcription/vision and script/coaching operations are separately verified. The optional local SearXNG service was not verified operational in this environment.
+- The production dashboard is deployed at [tikytoky-analyzer.vercel.app](https://tikytoky-analyzer.vercel.app). Actual password login, protected APIs, knowledge upload, Utah planning and production-browser connection to the local worker passed. Exhaustive viral-video coverage, guaranteed reach and automatic publishing are not claimed.
 
 ## Configure the dashboard and worker
 
@@ -102,3 +102,8 @@ Pop-Location
 `npm run smoke:ai` is an opt-in, billable OpenRouter check. The worker public-browser smoke is also opt-in and may incur AI usage. Ordinary automated tests mock external providers where appropriate and do not certify live TikTok access. Consult the [verification record](docs/VERIFICATION.md) for dated results and scope.
 
 This product includes software developed by UncleCode (https://x.com/unclecode) as part of the Crawl4AI project (https://github.com/unclecode/crawl4ai). See [third-party notices](docs/THIRD_PARTY.md) and the pinned [browser](docs/research/open-source-browser-stack.md), [media](docs/research/open-source-media-stack.md), and [research](docs/research/open-source-research-stack.md) audits.
+
+
+## This installation
+
+Production login uses the private password saved locally in `worker/.data/dashboard-password.txt`. Pair the running worker using `worker/.data/worker-token.txt`; these files and provider credentials are excluded from Git and Vercel uploads. The production origin is configured in the local worker. Keep the worker running on the computer where you use the dashboard; grant its local-network permission when requested. Remote/phone access to that worker requires a separate secure worker endpoint.

@@ -84,6 +84,7 @@ test("metadata-only research cannot claim transcript, visual, or acoustic observ
     const request = JSON.parse(calls[0].body as string);
     assert.equal(request.model, "deepseek/deepseek-v4.1-flash");
     assert.equal(request.max_tokens, 8000);
+    assert.deepEqual(request.reasoning, {effort:"none",exclude:true});
     assert.ok(calls[0].signal);
     assert.match(request.messages[0].content, /UNTRUSTED DATA/);
   });
@@ -164,7 +165,7 @@ test("scripts reject invented sources and research patterns", async () => {
   await withResponse(inventedSource, () => assert.rejects(generateScripts(brief, research(), [source], knowledge), /unknown source|failed validation \(scripts\.0\.sourceIds/));
   const inventedPattern = rawScript();
   inventedPattern.scripts[0].patternNames = ["A pattern that was not researched"];
-  await withResponse(inventedPattern, () => assert.rejects(generateScripts(brief, research(), [source], knowledge), /unknown research pattern/));
+  await withResponse(inventedPattern, () => assert.rejects(generateScripts(brief, research(), [source], knowledge), /unknown research pattern|failed validation \(scripts\.0\.patternNames/));
 });
 
 test("source-transcript phrase copying fails the originality check", async () => {

@@ -1,13 +1,41 @@
 {
-  "checkedAt": "2026-10-20T07:10:25.311943Z",
-  "urlSource": "Pinned TikTok-Api video.info documentation example",
+  "checkedAt": "2026-10-20T08:05:17.570686+00:00",
+  "urlSource": "Actual Browser Use discovery / independent public-page hydration",
+  "url": "https://www.tiktok.com/@themysticrebels/video/7697020615168920845",
   "modelCalls": 0,
+  "secondaryExplicitlyEnabledForProbe": true,
+  "inputSnapshotCount": 1,
   "result": {
     "videos": [
       {
-        "id": "7106686413101468970",
-        "url": "https://www.tiktok.com/@davidteathercodes/video/7106686413101468970",
-        "snapshots": []
+        "id": "7697020615168920845",
+        "url": "https://www.tiktok.com/@themysticrebels/video/7697020615168920845",
+        "platform": "tiktok",
+        "title": "Alchemystic Astrology is the only 100% accurate, useful system.  #astrology #testimonial #review #storytime #real",
+        "creator": "themysticrebels",
+        "publishedAt": "2026-10-15T22:11:14Z",
+        "duration": 52,
+        "followers": 15200,
+        "snapshots": [
+          {
+            "observedAt": "2026-10-20T08:04:26.543190Z",
+            "views": 1044,
+            "likes": 23,
+            "comments": 5,
+            "shares": 4,
+            "source": "TikTok public page hydration"
+          }
+        ],
+        "source": "TikTok public page hydration",
+        "fetchedAt": "2026-10-20T08:04:26.543190Z",
+        "description": "Alchemystic Astrology is the only 100% accurate, useful system.  #astrology #testimonial #review #storytime #real",
+        "hashtags": [
+          "astrology",
+          "testimonial",
+          "review",
+          "storytime",
+          "real"
+        ]
       }
     ],
     "warnings": [
@@ -16,5 +44,9 @@
     "blocked": true,
     "failureType": "EmptyResponseException",
     "failureStage": "public item metadata request"
-  }
+  },
+  "events": [
+    "Starting optional TikTok-Api metadata enrichment in its separate browser profile.",
+    "Reading TikTok-Api metadata 1/1."
+  ]
 }

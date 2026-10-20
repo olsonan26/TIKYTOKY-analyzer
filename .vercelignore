@@ -1,0 +1,25 @@
+# Vercel hosts the Next.js dashboard and bounded Node API routes only.
+# The local Python coordinator, browser profiles, models, uploads and tokens
+# stay on the workstation. Their source remains available in GitHub.
+worker/
+
+# Local credentials and generated build/test artifacts are never uploaded.
+.env*
+!.env.example
+.git/
+.vercel/
+.next/
+node_modules/
+coverage/
+test-results/
+playwright-report/
+*.log
+*.tsbuildinfo
+**/__pycache__/
+**/.pytest_cache/
+**/*.pyc
+
+# Research/development documentation and fixtures are not runtime assets.
+docs/
+tests/
+.github/
