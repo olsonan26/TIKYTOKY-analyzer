@@ -35,6 +35,10 @@ jobs:
           python-version: "3.12"
           enable-cache: true
           cache-dependency-glob: "worker/uv.lock"
+      - name: Install FFmpeg tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ffmpeg
       - name: Verify FFmpeg tools
         run: |
           command -v ffmpeg
